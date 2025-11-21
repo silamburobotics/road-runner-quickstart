@@ -35,7 +35,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
     private static final String POSITION = "FRONT";
-    private static final Pose2d START_POSE = new Pose2d(12.0, 132.0, 0.0); // Starting pose for Road Runner
+    private static final Pose2d START_POSE = new Pose2d(0.0, 0.0, 0.0); // Starting pose for Road Runner - Origin position
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;

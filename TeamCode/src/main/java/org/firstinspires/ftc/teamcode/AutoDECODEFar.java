@@ -134,11 +134,11 @@ public class AutoDECODEFar extends LinearOpMode {
         // Calculate final position after initial movement
         Pose2d positionAfterFirstMove = new Pose2d(START_POSE.position.x + FORWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble());
         
-        // Create smooth trajectory with all movements
+        // Create smooth trajectory with all movements (X is forward in your coordinate system)
         Action complexTrajectory = drive.actionBuilder(positionAfterFirstMove)
-                .lineToY(positionAfterFirstMove.position.y + 20.0)  // Go forward 20 inches
+                .lineToX(positionAfterFirstMove.position.x + 20.0)  // Go forward 20 inches (X direction)
                 .turn(Math.toRadians(135))  // Turn 135 degrees right (clockwise)
-                .lineToY(positionAfterFirstMove.position.y + 20.0 - 30.0)  // Come reverse 30 inches
+                .lineToX(positionAfterFirstMove.position.x + 20.0 - 30.0)  // Come reverse 30 inches (X direction)
                 .build();
         
         Actions.runBlocking(complexTrajectory);
