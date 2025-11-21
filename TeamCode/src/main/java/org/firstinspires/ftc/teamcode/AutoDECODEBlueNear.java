@@ -16,7 +16,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
 @Autonomous(name = "Auto Blue Near", group = "Blue Alliance")
-public class AutoBlueNear extends LinearOpMode {
+public class AutoDECODEBlueNear extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;

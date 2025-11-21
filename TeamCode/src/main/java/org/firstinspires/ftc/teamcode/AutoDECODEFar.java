@@ -16,7 +16,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
 @Autonomous(name="Auto Far", group="Linear OpMode")
-public class AutoFar extends LinearOpMode {
+public class AutoDECODEFar extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;

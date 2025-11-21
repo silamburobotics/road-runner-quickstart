@@ -26,7 +26,7 @@ import android.util.Size;
 
 @Config
 @TeleOp(name = "TeleOpDECODESimple2", group = "TeleOp")
-public class TeleOpDECODESimple2 extends LinearOpMode {
+public class TeleOpDECODE extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
