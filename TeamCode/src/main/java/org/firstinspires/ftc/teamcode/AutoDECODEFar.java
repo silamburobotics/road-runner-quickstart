@@ -90,8 +90,9 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("1.", "Start shooter + fire 3 shots");
         telemetry.addData("2.", "Move sideways 10 inches");
         telemetry.addData("3.", "Go forward 20 inches");
-        telemetry.addData("4.", "Turn 135° right");
-        telemetry.addData("5.", "Reverse 30 inches");
+        telemetry.addData("4.", "Turn 115° left");
+        telemetry.addData("5.", "Move forward 10 inches");
+        telemetry.addData("6.", "Return to start position (0,0)");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔵 Blue indicator");
@@ -113,17 +114,17 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Step 1: Start shooter and fire 3 shots
         startShooterSystem();
-        waitForShooterSpeed();
+        //waitForShooterSpeed();
         
-        fireShot(1);
+        //fireShot(1);
         moveIndexorToNextPosition();
-        waitForShooterSpeed();
+        //waitForShooterSpeed();
         
-        fireShot(2);
+        //fireShot(2);
         moveIndexorToNextPosition();
-        waitForShooterSpeed();
+        //waitForShooterSpeed();
         
-        fireShot(3);
+        //fireShot(3);
         
         stopShooterSystem();
         
@@ -137,15 +138,27 @@ public class AutoDECODEFar extends LinearOpMode {
         // Create smooth trajectory with all movements (X is forward in your coordinate system)
         Action complexTrajectory = drive.actionBuilder(positionAfterFirstMove)
                 .lineToX(positionAfterFirstMove.position.x + 20.0)  // Go forward 20 inches (X direction)
-                .turn(Math.toRadians(135))  // Turn 135 degrees right (clockwise)
-                .lineToX(positionAfterFirstMove.position.x + 20.0 - 30.0)  // Come reverse 30 inches (X direction)
+                .turn(Math.toRadians(-115))  // Turn 135 degrees right (clockwise)
+                .lineToX(positionAfterFirstMove.position.x + 20 + 10)  // Come reverse 30 inches (X direction)
                 .build();
         
         Actions.runBlocking(complexTrajectory);
         
+        // Step 3: Return to initial position
+        telemetry.addData("🚀 STEP 3", "Returning to initial position...");
+        telemetry.update();
+        
+        // Create trajectory to return to start position (0, 0) with original heading
+        Action returnToStart = drive.actionBuilder(new Pose2d(positionAfterFirstMove.position.x + 20 + 10, positionAfterFirstMove.position.y, Math.toRadians(-115)))
+                .lineToXLinearHeading(START_POSE.position.x, START_POSE.heading.toDouble())  // Return to X=0 and original heading
+                .lineToY(START_POSE.position.y)  // Return to Y=0 
+                .build();
+        
+        Actions.runBlocking(returnToStart);
+        
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
-        telemetry.addData("📍 Final Position", "Complex trajectory: 10\" sideways + 20\" forward + 135° turn + 30\" reverse");
+        telemetry.addData("📍 Final Position", "Returned to start position (0,0)");
         telemetry.addData("🎯 Shots Fired", "3 shots");
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
