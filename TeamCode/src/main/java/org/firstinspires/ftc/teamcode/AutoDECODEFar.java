@@ -64,12 +64,12 @@ public class AutoDECODEFar extends LinearOpMode {
     public static final double LIGHT_BLUE_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
-    public static final double TRIGGER_FIRE = 0.10;     // Fire position
-    public static final double TRIGGER_HOME = 0.76;     // Home/safe position
+    public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
+    public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double WAIT_BETWEEN_SHOTS = 3.0;      // Seconds to wait between shots (stabilization)
+    public static final double WAIT_BETWEEN_SHOTS = 1.0;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
@@ -88,7 +88,10 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("Start Pose", "X: %.1f\", Y: %.1f\", H: %.1f°", START_POSE.position.x, START_POSE.position.y, Math.toDegrees(START_POSE.heading.toDouble()));
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
         telemetry.addData("1.", "Start shooter + fire 3 shots");
-        telemetry.addData("2.", "Move sideways 40 inches using Road Runner (orthogonal to Y axis)");
+        telemetry.addData("2.", "Move sideways 10 inches");
+        telemetry.addData("3.", "Go forward 20 inches");
+        telemetry.addData("4.", "Turn 135° right");
+        telemetry.addData("5.", "Reverse 30 inches");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔵 Blue indicator");
@@ -124,19 +127,25 @@ public class AutoDECODEFar extends LinearOpMode {
         
         stopShooterSystem();
         
-        // Step 2: Move sideways 40 inches (orthogonal to Y axis)
-        telemetry.addData("🚀 STEP 2", "Moving sideways %.1f inches...", FORWARD_DISTANCE);
+        // Step 2: Execute complex trajectory - forward 20", turn 135° right, reverse 30"
+        telemetry.addData("🚀 STEP 2", "Executing complex trajectory...");
         telemetry.update();
         
-        Action moveForward = drive.actionBuilder(START_POSE)
-                .lineToX(START_POSE.position.x + FORWARD_DISTANCE)  // Move sideways 40 inches (orthogonal to Y axis)
+        // Calculate final position after initial movement
+        Pose2d positionAfterFirstMove = new Pose2d(START_POSE.position.x + FORWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble());
+        
+        // Create smooth trajectory with all movements
+        Action complexTrajectory = drive.actionBuilder(positionAfterFirstMove)
+                .lineToY(positionAfterFirstMove.position.y + 20.0)  // Go forward 20 inches
+                .turn(Math.toRadians(135))  // Turn 135 degrees right (clockwise)
+                .lineToY(positionAfterFirstMove.position.y + 20.0 - 30.0)  // Come reverse 30 inches
                 .build();
         
-        Actions.runBlocking(moveForward);
+        Actions.runBlocking(complexTrajectory);
         
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
-        telemetry.addData("📍 Final Position", "40\" sideways from start");
+        telemetry.addData("📍 Final Position", "Complex trajectory: 10\" sideways + 20\" forward + 135° turn + 30\" reverse");
         telemetry.addData("🎯 Shots Fired", "3 shots");
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
