@@ -148,7 +148,7 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Start shooter with optimized velocity control for consistency
         double initialVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-        shooter.setVelocity(initialVelocity);
+        // shooter.setVelocity(initialVelocity); // DISABLED FOR TESTING
         
         // Start shooter servo
         shooterServo.setPower(SHOOTER_SERVO_POWER);
@@ -175,7 +175,7 @@ public class AutoDECODEFar extends LinearOpMode {
         timeout.reset();
         
         while (opModeIsActive() && timeout.seconds() < SHOOTER_SPINUP_TIMEOUT) {
-            double currentVelocity = shooter.getVelocity();
+            double currentVelocity = 0; // shooter.getVelocity(); // DISABLED FOR TESTING
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             
             // Update speed light
@@ -217,7 +217,7 @@ public class AutoDECODEFar extends LinearOpMode {
         boolean speedStable = false;
         
         while (opModeIsActive() && stabilizationTimer.seconds() < SHOOTER_STABILIZATION_TIME) {
-            double currentVelocity = shooter.getVelocity();
+            double currentVelocity = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
             double velocityDifference = Math.abs(currentVelocity - lastVelocity);
             double targetDifference = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
             
@@ -228,7 +228,7 @@ public class AutoDECODEFar extends LinearOpMode {
             // Apply velocity correction if needed
             if (targetDifference > SHOOTER_SPEED_TOLERANCE) {
                 double correctedVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-                shooter.setVelocity(correctedVelocity);
+                // shooter.setVelocity(correctedVelocity); // DISABLED FOR TESTING
                 
                 telemetry.addData("🔧 CORRECTING", "Adjusting to %.0f ticks/sec", correctedVelocity);
             }
@@ -262,12 +262,12 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.update();
         
         // Pre-fire velocity check and correction
-        double preFire = shooter.getVelocity();
+        double preFire = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
         double targetDifference = Math.abs(preFire - SHOOTER_TARGET_VELOCITY);
         
         if (targetDifference > SHOOTER_SPEED_TOLERANCE) {
             telemetry.addData("🔧 PRE-FIRE", "Correcting velocity: %.0f → %.0f", preFire, SHOOTER_TARGET_VELOCITY);
-            shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
+            // shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR); // DISABLED FOR TESTING
             telemetry.update();
             sleep(200); // Brief stabilization
         }
@@ -280,7 +280,7 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Wait for fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
-            double currentVelocity = shooter.getVelocity();
+            double currentVelocity = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
             
@@ -293,7 +293,7 @@ public class AutoDECODEFar extends LinearOpMode {
             // Real-time velocity correction during firing
             if (velocityError > SHOOTER_SPEED_TOLERANCE) {
                 telemetry.addData("🔧 CORRECTING", "Adjusting during fire");
-                shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
+                // shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR); // DISABLED FOR TESTING
             }
             
             telemetry.update();
@@ -304,7 +304,7 @@ public class AutoDECODEFar extends LinearOpMode {
         triggerServo.setPosition(TRIGGER_HOME);
         
         // Post-fire velocity check
-        double postFire = shooter.getVelocity();
+        double postFire = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
         telemetry.addData("✅ Shot %d", "Fired successfully!", shotNumber);
         telemetry.addData("📊 Post-Fire Speed", "%.0f ticks/sec", postFire);
         telemetry.update();
@@ -352,7 +352,7 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.update();
         
         // Stop shooter
-        shooter.setPower(0);
+        // shooter.setPower(0); // DISABLED FOR TESTING
         
         // Stop shooter servo
         shooterServo.setPower(0);
