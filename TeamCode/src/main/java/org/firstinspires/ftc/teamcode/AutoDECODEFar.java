@@ -35,7 +35,7 @@ public class AutoDECODEFar extends LinearOpMode {
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
     private static final String POSITION = "BACK";
-    private static final Pose2d START_POSE = new Pose2d(12.0, 108.0, 0.0); // Starting pose for Road Runner (back position)
+    private static final Pose2d START_POSE = new Pose2d(0.0, 0.0, 0.0); // Starting pose for Road Runner (origin position)
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -74,7 +74,7 @@ public class AutoDECODEFar extends LinearOpMode {
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
     // Road Runner trajectory settings
-    public static final double FORWARD_DISTANCE = 40.0;       // Distance to move sideways (inches)
+    public static final double FORWARD_DISTANCE = 10.0;       // Distance to move sideways (inches)
     
     @Override
     public void runOpMode() {
@@ -154,7 +154,7 @@ public class AutoDECODEFar extends LinearOpMode {
         shooterServo.setPower(SHOOTER_SERVO_POWER);
         
         // Start conveyor to help feed balls
-        conveyor.setPower(CONVEYOR_POWER);
+        // conveyor.setPower(CONVEYOR_POWER); // DISABLED FOR TESTING
         
         // Set alliance indicator light
         speedLight.setPosition(LIGHT_BLUE_POSITION);
@@ -162,7 +162,7 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("✅ Shooter", "Started at %.0f ticks/sec (corrected)", initialVelocity);
         telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("✅ Shooter Servo", "Running at %.1f power", SHOOTER_SERVO_POWER);
-        telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
+        telemetry.addData("🛑 Conveyor", "DISABLED for testing");
         telemetry.addData("🔵 Alliance Light", "Blue indicator active");
         telemetry.update();
     }
@@ -358,7 +358,7 @@ public class AutoDECODEFar extends LinearOpMode {
         shooterServo.setPower(0);
         
         // Stop conveyor
-        conveyor.setPower(0);
+        // conveyor.setPower(0); // DISABLED FOR TESTING
         
         // Turn off speed light
         speedLight.setPosition(LIGHT_OFF_POSITION);
@@ -368,7 +368,7 @@ public class AutoDECODEFar extends LinearOpMode {
         
         telemetry.addData("✅ Shooter", "Stopped");
         telemetry.addData("✅ Shooter Servo", "Stopped");
-        telemetry.addData("✅ Conveyor", "Stopped");
+        telemetry.addData("🛑 Conveyor", "DISABLED for testing");
         telemetry.addData("✅ Speed Light", "Off");
         telemetry.addData("✅ Trigger", "Home position");
         telemetry.update();
