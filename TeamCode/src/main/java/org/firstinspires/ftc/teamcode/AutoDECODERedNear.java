@@ -64,8 +64,8 @@ public class AutoDECODERedNear extends LinearOpMode {
     public static final double LIGHT_BLUE_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
-    public static final double TRIGGER_FIRE = 0.10;     // Fire position
-    public static final double TRIGGER_HOME = 0.76;     // Home/safe position
+    public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
+    public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
