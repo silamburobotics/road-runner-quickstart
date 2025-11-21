@@ -149,9 +149,10 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.update();
         
         // Create trajectory to return to start position (0, 0) with original heading
-        Action returnToStart = drive.actionBuilder(new Pose2d(positionAfterFirstMove.position.x + 20 + 10, positionAfterFirstMove.position.y, Math.toRadians(-115)))
-                .lineToXLinearHeading(START_POSE.position.x, START_POSE.heading.toDouble())  // Return to X=0 and original heading
-                .lineToY(START_POSE.position.y)  // Return to Y=0 
+        Action returnToStart = drive.actionBuilder(complexTrajectory.end())
+                .lineToX(10.0)  // Go forward 20 inches (X direction)
+                .turn(Math.toRadians(115))  // Turn 135 degrees right (clockwise)
+                .lineToX(0)  // Come reverse 30 inches (X direction)
                 .build();
         
         Actions.runBlocking(returnToStart);
