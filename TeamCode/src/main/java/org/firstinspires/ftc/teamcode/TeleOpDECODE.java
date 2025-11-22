@@ -295,8 +295,18 @@ public class TeleOpDECODE extends LinearOpMode {
             
             visionPortal = builder.build();
             
+            // Wait for vision portal to initialize
+            while (!isStopRequested() && visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+                telemetry.addData("Vision Portal", "Initializing...");
+                telemetry.update();
+                sleep(20);
+            }
+            
+            telemetry.addData("✅ AprilTag System", "Initialized successfully");
+            
         } catch (Exception e) {
             telemetry.addData("❌ AprilTag Error", "Failed to initialize: %s", e.getMessage());
+            telemetry.update();
             visionPortal = null;
             aprilTag = null;
         }
@@ -774,25 +784,12 @@ public class TeleOpDECODE extends LinearOpMode {
             // Return trigger to home position
             triggerServo.setPosition(TRIGGER_HOME);
             triggerInFirePosition = false;
-            triggerTimer.reset();
             
-            telemetry.addData("🏠 Trigger", "Returned to HOME position");
-            
-            // Add 0.5 second delay before advancing indexer
-            try {
-                Thread.sleep(500);  // 0.5 second delay
-            } catch (InterruptedException e) {
-                // Handle interruption gracefully
-                Thread.currentThread().interrupt();
-            }
-            
-            // 3) Advance indexer to next position
-            advanceIndexer();
-            
-            // End sequence
+            // End sequence immediately - no wait, no auto-advance
             triggerSequenceActive = false;
             
-            telemetry.addData("✅ Trigger Sequence", "COMPLETE");
+            telemetry.addData("🏠 Trigger", "Returned to HOME position");
+            telemetry.addData("✅ Trigger Sequence", "COMPLETE - manual indexer control");
             telemetry.update();
         }
     }
@@ -972,6 +969,7 @@ public class TeleOpDECODE extends LinearOpMode {
     private void startAprilTagAlignment() {
         if (alignmentActive) {
             telemetry.addData("⚠️ Alignment", "Already in progress");
+            telemetry.update();
             return;
         }
         
@@ -982,11 +980,21 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
+        // Check if camera is streaming
+        if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            telemetry.addData("❌ Alignment", "Camera not streaming");
+            telemetry.update();
+            return;
+        }
+        
         // Look for AprilTag #20
         List<AprilTagDetection> detections = aprilTag.getDetections();
         AprilTagDetection targetTag = null;
         
+        telemetry.addData("🔍 Searching", "Found %d tags", detections.size());
+        
         for (AprilTagDetection detection : detections) {
+            telemetry.addData("Tag Found", "ID: %d", detection.id);
             if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
                 targetTag = detection;
                 break;
@@ -995,6 +1003,7 @@ public class TeleOpDECODE extends LinearOpMode {
         
         if (targetTag == null) {
             telemetry.addData("❌ Alignment", "AprilTag #%d not found", TARGET_TAG_ID);
+            telemetry.addData("Camera State", "%s", visionPortal.getCameraState().toString());
             telemetry.update();
             return;
         }
@@ -1024,9 +1033,9 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Check for manual override (any gamepad input)
+        // Check for manual override (any gamepad input except gamepad2.a which starts alignment)
         if (Math.abs(gamepad1.left_stick_x) > 0.1 || Math.abs(gamepad1.left_stick_y) > 0.1 || 
-            Math.abs(gamepad1.right_stick_x) > 0.1 || gamepad2.a) {
+            Math.abs(gamepad1.right_stick_x) > 0.1) {
             stopAlignment("Manual override");
             return;
         }
@@ -1063,7 +1072,8 @@ public class TeleOpDECODE extends LinearOpMode {
         }
         
         // Calculate turn power (proportional control)
-        double turnPower = bearingError * 0.02; // Proportional gain
+        // P = 0.015 gives full power (0.3) at maximum expected bearing error of 20 degrees
+        double turnPower = bearingError * 0.015; // Proportional gain: 20° × 0.015 = 0.3 (full power)
         turnPower = Math.max(-ALIGNMENT_TURN_POWER, Math.min(ALIGNMENT_TURN_POWER, turnPower));
         
         // Apply turn movement (positive bearing = turn right)
