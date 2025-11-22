@@ -89,7 +89,8 @@ public class TeleOpDECODE extends LinearOpMode {
     // Trigger sequence variables
     private boolean triggerSequenceActive = false;
     private ElapsedTime triggerTimer = new ElapsedTime();
-    private boolean triggerInFirePosition = false;
+    private int triggerSequenceStep = 0;  // 0=home, 1=first fire, 2=intermittent, 3=second fire, 4=complete
+    private boolean firstFireComplete = false;
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -113,6 +114,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
+    public static final double TRIGGER_INTERMITTENT = 0.25;  // Intermittent position (65.7 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     public static final double TRIGGER_FIRE_DURATION = 0.5;  // Fire duration in seconds
     
@@ -740,7 +742,9 @@ public class TeleOpDECODE extends LinearOpMode {
      * Function Trigger
      * 1) Check shooter is running at target velocity
      * 2) Put the servo in fire position for 0.5 sec
-     * 3) Advance indexer to next position
+     * 3) Move to intermittent position
+     * 4) Fire again for 0.5 sec
+     * 5) Return to home position
      */
     private void triggerFunction() {
         if (triggerSequenceActive) {
@@ -764,12 +768,13 @@ public class TeleOpDECODE extends LinearOpMode {
         indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         triggerSequenceActive = true;
-        triggerInFirePosition = true;
+        triggerSequenceStep = 1;  // Step 1: First fire
+        firstFireComplete = false;
         triggerTimer.reset();
         
-        telemetry.addData("🎯 Trigger Function", "SEQUENCE STARTED");
+        telemetry.addData("🎯 Trigger Function", "DOUBLE-FIRE SEQUENCE STARTED");
         telemetry.addData("Shooter Status", "RUNNING at %.0f ticks/sec", currentShooterVelocity);
-        telemetry.addData("Trigger Position", "FIRE (%.1f seconds)", TRIGGER_FIRE_DURATION);
+        telemetry.addData("Trigger Position", "FIRST FIRE (%.1f seconds)", TRIGGER_FIRE_DURATION);
         telemetry.addData("Indexer Mode", "FLOAT (for firing)");
         telemetry.update();
     }
@@ -779,19 +784,53 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Check if fire duration is complete
-        if (triggerInFirePosition && triggerTimer.seconds() >= TRIGGER_FIRE_DURATION) {
-            // Return trigger to home position
-            triggerServo.setPosition(TRIGGER_HOME);
-            triggerInFirePosition = false;
-            
-            // End sequence immediately - no wait, no auto-advance
-            triggerSequenceActive = false;
-            
-            telemetry.addData("🏠 Trigger", "Returned to HOME position");
-            telemetry.addData("✅ Trigger Sequence", "COMPLETE - manual indexer control");
-            telemetry.update();
+        double elapsedTime = triggerTimer.seconds();
+        
+        switch (triggerSequenceStep) {
+            case 1: // First fire position
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    // Move to intermittent position
+                    triggerServo.setPosition(TRIGGER_INTERMITTENT);
+                    triggerSequenceStep = 2;
+                    firstFireComplete = true;
+                    triggerTimer.reset();
+                    
+                    telemetry.addData("🔄 Trigger", "Moving to INTERMITTENT position");
+                    telemetry.addData("First Fire", "COMPLETE");
+                }
+                break;
+                
+            case 2: // Intermittent position (brief pause)
+                if (elapsedTime >= 0.2) {  // 0.2 second pause at intermittent
+                    // Move to second fire position
+                    triggerServo.setPosition(TRIGGER_FIRE);
+                    triggerSequenceStep = 3;
+                    triggerTimer.reset();
+                    
+                    telemetry.addData("🎯 Trigger", "SECOND FIRE position");
+                }
+                break;
+                
+            case 3: // Second fire position
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    // Return to home position
+                    triggerServo.setPosition(TRIGGER_HOME);
+                    triggerSequenceStep = 4;
+                    
+                    telemetry.addData("🏠 Trigger", "Returning to HOME position");
+                }
+                break;
+                
+            case 4: // Sequence complete
+                triggerSequenceActive = false;
+                triggerSequenceStep = 0;
+                firstFireComplete = false;
+                
+                telemetry.addData("✅ Trigger Sequence", "DOUBLE-FIRE COMPLETE - manual indexer control");
+                break;
         }
+        
+        telemetry.update();
     }
     
     private void updateShooterSpeedMonitoring() {
@@ -925,17 +964,39 @@ public class TeleOpDECODE extends LinearOpMode {
         
         // Trigger status
         if (triggerSequenceActive) {
-            if (triggerInFirePosition) {
-                double timeLeft = TRIGGER_FIRE_DURATION - triggerTimer.seconds();
-                telemetry.addData("Trigger Sequence", "FIRE position (%.1fs left)", timeLeft);
-            } else {
-                telemetry.addData("Trigger Sequence", "Returning to HOME");
+            String stepDescription;
+            double timeLeft = TRIGGER_FIRE_DURATION - triggerTimer.seconds();
+            
+            switch (triggerSequenceStep) {
+                case 1:
+                    stepDescription = String.format("FIRST FIRE (%.1fs left)", timeLeft);
+                    break;
+                case 2:
+                    stepDescription = String.format("INTERMITTENT (%.1fs)", triggerTimer.seconds());
+                    break;
+                case 3:
+                    stepDescription = String.format("SECOND FIRE (%.1fs left)", timeLeft);
+                    break;
+                case 4:
+                    stepDescription = "Returning to HOME";
+                    break;
+                default:
+                    stepDescription = "Unknown step";
+                    break;
             }
+            
+            telemetry.addData("Trigger Sequence", "%s", stepDescription);
         } else {
             double currentTriggerPos = triggerServo.getPosition();
-            boolean inFirePos = Math.abs(currentTriggerPos - TRIGGER_FIRE) < 0.05;
-            telemetry.addData("Trigger Position", "%s (%.2f)", 
-                inFirePos ? "FIRE" : "HOME", currentTriggerPos);
+            String positionName;
+            if (Math.abs(currentTriggerPos - TRIGGER_FIRE) < 0.05) {
+                positionName = "FIRE";
+            } else if (Math.abs(currentTriggerPos - TRIGGER_INTERMITTENT) < 0.05) {
+                positionName = "INTERMITTENT";
+            } else {
+                positionName = "HOME";
+            }
+            telemetry.addData("Trigger Position", "%s (%.2f)", positionName, currentTriggerPos);
         }
         
         telemetry.addData("", "");

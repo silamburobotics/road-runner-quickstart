@@ -88,9 +88,9 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         telemetry.addData("Position", "NEAR");
         telemetry.addData("Start Pose", "X: %.1f\", Y: %.1f\", H: %.1f°", START_POSE.position.x, START_POSE.position.y, Math.toDegrees(START_POSE.heading.toDouble()));
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
-        telemetry.addData("1.", "Move left 50 inches using Road Runner");
+        telemetry.addData("1.", "Move rearward 50 inches using Road Runner");
         telemetry.addData("2.", "Start shooter + fire 3 shots");
-        telemetry.addData("3.", "Move forward 12 inches using Road Runner");
+        telemetry.addData("3.", "Move left 24 inches using Road Runner");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔵 Blue indicator");
@@ -112,19 +112,19 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         
         // Create trajectories
         Action moveRearward = drive.actionBuilder(START_POSE)
-                .lineToX(START_POSE.position.x - REARWARD_DISTANCE)  // Move left 50 inches
+                .lineToY(START_POSE.position.y - REARWARD_DISTANCE)  // Move rearward 50 inches
                 .build();
         
-        Action moveLeft = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y + LEFTWARD_DISTANCE), START_POSE.heading.toDouble())  // Strafe forward 12 inches (perpendicular to first movement)
+        Action moveLeft = drive.actionBuilder(new Pose2d(START_POSE.position.x, START_POSE.position.y - REARWARD_DISTANCE, START_POSE.heading.toDouble()))
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - LEFTWARD_DISTANCE, START_POSE.position.y - REARWARD_DISTANCE), START_POSE.heading.toDouble())  // Strafe left 24 inches (perpendicular to first movement)
                 .build();
         
-        // Step 1: Move left 32 inches
-        telemetry.addData("🚀 STEP 1", "Moving left %.1f inches...", REARWARD_DISTANCE);
+        // Step 1: Move rearward 50 inches
+        telemetry.addData("🚀 STEP 1", "Moving rearward %.1f inches...", REARWARD_DISTANCE);
         telemetry.update();
         Actions.runBlocking(moveRearward);
         
-        telemetry.addData("✅ STEP 1", "Left movement completed");
+        telemetry.addData("✅ STEP 1", "Rearward movement completed");
         telemetry.update();
         sleep(500);
         
@@ -144,14 +144,14 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         
         stopShooterSystem();
         
-        // Step 3: Move forward 12 inches
-        telemetry.addData("🚀 STEP 3", "Moving forward %.1f inches...", LEFTWARD_DISTANCE);
+        // Step 3: Move left 24 inches
+        telemetry.addData("🚀 STEP 3", "Moving left %.1f inches...", LEFTWARD_DISTANCE);
         telemetry.update();
         Actions.runBlocking(moveLeft);
         
         telemetry.addData("✅ AUTONOMOUS", "Blue Near Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
-        telemetry.addData("📍 Final Position", "50\" left + 12\" forward from start");
+        telemetry.addData("📍 Final Position", "50\" rearward + 24\" left from start");
         telemetry.addData("🎯 Shots Fired", "3 shots");
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
