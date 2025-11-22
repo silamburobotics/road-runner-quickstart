@@ -156,8 +156,17 @@ public class TeleOpDECODE extends LinearOpMode {
         initializeMotors();
         initializeAprilTag();
         
-        // Preserve indexor position from autonomous - do not reset
-        indexorLastSuccessfulPosition = indexor.getCurrentPosition();
+        // Restore indexor position from autonomous if available
+        if (RobotState.hasIndexerPositionSaved()) {
+            indexorLastSuccessfulPosition = RobotState.getSavedIndexerPosition();
+            telemetry.addData("📥 Indexer Position", "Restored from Auto: %.1f ticks", indexorLastSuccessfulPosition);
+            long timeSinceSave = System.currentTimeMillis() - RobotState.getSaveTimestamp();
+            telemetry.addData("⏱️ Time Since Auto", "%.1f seconds ago", timeSinceSave / 1000.0);
+        } else {
+            // No saved position - starting fresh (encoder was reset in initializeMotors)
+            indexorLastSuccessfulPosition = indexor.getCurrentPosition();
+            telemetry.addData("📍 Indexer Position", "Starting fresh: %.1f ticks", indexorLastSuccessfulPosition);
+        }
         
         telemetry.addData("Status", "TeleOpDECODESimple2 - Initialized");
         telemetry.addData("Indexor Position", "Preserved: %.1f ticks", indexorLastSuccessfulPosition);
