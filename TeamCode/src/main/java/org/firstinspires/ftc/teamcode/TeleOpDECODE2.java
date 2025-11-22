@@ -77,7 +77,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
     
     // AprilTag alignment settings
     public static final double ALIGNMENT_TURN_POWER = 0.3;
-    public static final double ALIGNMENT_TOLERANCE = 2.0;
+    public static final double ALIGNMENT_TOLERANCE = 0.5;
     public static final double MAX_ALIGNMENT_TIME = 3.0;
     private boolean alignmentActive = false;
     private ElapsedTime alignmentTimer = new ElapsedTime();
