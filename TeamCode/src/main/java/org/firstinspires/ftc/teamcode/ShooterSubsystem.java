@@ -18,6 +18,7 @@ public class ShooterSubsystem {
     
     // Hardware components
     private DcMotorEx indexor;
+    private DcMotorEx intake;
     private DcMotorEx conveyor;
     private DcMotorEx shooter;
     private CRServo shooterServo;
@@ -25,6 +26,7 @@ public class ShooterSubsystem {
     private Servo triggerServo;
     
     // Motor power settings
+    public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double INDEXOR_POWER = 0.5;
     public static final double SHOOTER_SERVO_POWER = 1.0;
@@ -83,6 +85,7 @@ public class ShooterSubsystem {
     public void init(HardwareMap hardwareMap) {
         // Initialize motors
         indexor = hardwareMap.get(DcMotorEx.class, "indexor");
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
         conveyor = hardwareMap.get(DcMotorEx.class, "conveyor");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
         
@@ -93,6 +96,7 @@ public class ShooterSubsystem {
         
         // Set motor directions
         indexor.setDirection(DcMotor.Direction.REVERSE);
+        intake.setDirection(DcMotor.Direction.FORWARD);
         conveyor.setDirection(DcMotor.Direction.REVERSE);
         shooter.setDirection(DcMotor.Direction.REVERSE);
         
@@ -107,11 +111,13 @@ public class ShooterSubsystem {
         
         // Set zero power behavior
         indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         conveyor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         // Set motor modes
         indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         
@@ -424,7 +430,52 @@ public class ShooterSubsystem {
         conveyor.setPower(0);
     }
     
+    public void startConveyorReverse() {
+        conveyor.setPower(-CONVEYOR_POWER);
+    }
+    
     public void setConveyorPower(double power) {
         conveyor.setPower(power);
+    }
+    
+    // Indexer position setter (for restoring from autonomous)
+    public void setIndexorLastSuccessfulPosition(double position) {
+        indexorLastSuccessfulPosition = position;
+    }
+    
+    // Indexer hold/release for outtake function
+    public void holdIndexer() {
+        indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        indexor.setPower(0);
+    }
+    
+    public void releaseIndexer() {
+        indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        indexor.setPower(0);
+    }
+    
+    // Intake control
+    public void startIntake() {
+        intake.setPower(INTAKE_POWER);
+    }
+    
+    public void stopIntake() {
+        intake.setPower(0);
+    }
+    
+    public void startIntakeReverse() {
+        intake.setPower(-INTAKE_POWER);
+    }
+    
+    public void setIntakePower(double power) {
+        intake.setPower(power);
+    }
+    
+    public double getIntakePower() {
+        return intake.getPower();
+    }
+    
+    public boolean isIntakeRunning() {
+        return Math.abs(intake.getPower()) > 0.1;
     }
 }
