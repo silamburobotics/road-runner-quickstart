@@ -116,7 +116,7 @@ public class AutoDECODERedNear extends LinearOpMode {
                 .build();
         
         Action moveLeft = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y - LEFTWARD_DISTANCE), START_POSE.heading.toDouble())  // Strafe backward 24 inches (reversed direction)
+                .lineToY(START_POSE.position.y - 25)  // Move backward 25 inches
                 .build();
         
         // Step 1: Move left 32 inches

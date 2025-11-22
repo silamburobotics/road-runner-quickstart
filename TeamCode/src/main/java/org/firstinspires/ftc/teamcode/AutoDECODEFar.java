@@ -142,25 +142,6 @@ public class AutoDECODEFar extends LinearOpMode {
         
         Actions.runBlocking(complexTrajectory);
         
-        // Get final position after complex trajectory
-        Pose2d finalPosition = drive.pose;
-        telemetry.addData("📍 Complex Trajectory", "Completed!");
-        telemetry.addData("📍 Final Position", "X: %.1f\", Y: %.1f\", H: %.1f°", 
-            finalPosition.position.x, finalPosition.position.y, Math.toDegrees(finalPosition.heading.toDouble()));
-        telemetry.update();
-        
-        // Step 3: Return to initial position
-        telemetry.addData("🚀 STEP 3", "Returning to initial position...");
-        telemetry.update();
-        
-        // Create trajectory to return to start position (0, 0) with original heading
-        Action returnToStart = drive.actionBuilder(finalPosition)
-                .lineToXLinearHeading(0.0, Math.toRadians(0))  // Return to X=0 and original heading
-                .lineToY(0.0)  // Return to Y=0
-                .build();
-        
-        Actions.runBlocking(returnToStart);
-        
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
         telemetry.addData("📍 Final Position", "Returned to start position (0,0)");
