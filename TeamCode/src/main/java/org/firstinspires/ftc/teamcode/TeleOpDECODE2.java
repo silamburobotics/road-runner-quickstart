@@ -66,7 +66,8 @@ public class TeleOpDECODE2 extends LinearOpMode {
     public static final double BALL_DETECTION_THRESHOLD = 0.04;
     
     // AprilTag settings
-    public static final int TARGET_TAG_ID = 20;
+    public static final int TARGET_TAG_ID_PRIMARY = 20;
+    public static final int TARGET_TAG_ID_SECONDARY = 24;
     public static final double OPTIMAL_SHOOTING_DISTANCE = 24.0;
     
     // Mecanum drive settings
@@ -414,15 +415,18 @@ public class TeleOpDECODE2 extends LinearOpMode {
         List<AprilTagDetection> detections = aprilTag.getDetections();
         AprilTagDetection targetTag = null;
         
+        // Look for either tag ID 20 or 24
         for (AprilTagDetection detection : detections) {
-            if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
+            if ((detection.id == TARGET_TAG_ID_PRIMARY || detection.id == TARGET_TAG_ID_SECONDARY) 
+                && detection.ftcPose != null) {
                 targetTag = detection;
                 break;
             }
         }
         
         if (targetTag == null) {
-            telemetry.addData("❌ Alignment", "AprilTag #%d not found", TARGET_TAG_ID);
+            telemetry.addData("❌ Alignment", "AprilTag #%d or #%d not found", 
+                TARGET_TAG_ID_PRIMARY, TARGET_TAG_ID_SECONDARY);
             return;
         }
         
@@ -430,7 +434,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         alignmentActive = true;
         alignmentTimer.reset();
         
-        telemetry.addData("✅ Alignment", "Started - targeting %.1f°", targetBearing);
+        telemetry.addData("✅ Alignment", "Started - Tag #%d at %.1f°", targetTag.id, targetBearing);
         telemetry.update();
     }
     
