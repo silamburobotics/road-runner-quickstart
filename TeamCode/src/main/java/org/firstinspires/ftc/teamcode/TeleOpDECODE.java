@@ -114,7 +114,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
-    public static final double TRIGGER_INTERMITTENT = 0.25;  // Intermittent position (65.7 degrees)
+    public static final double TRIGGER_INTERMITTENT = 0.35;  // Intermittent position (65.7 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     public static final double TRIGGER_FIRE_DURATION = 0.5;  // Fire duration in seconds
     
@@ -821,12 +821,15 @@ public class TeleOpDECODE extends LinearOpMode {
                 }
                 break;
                 
-            case 4: // Sequence complete
+            case 4: // Sequence complete - advance indexer
                 triggerSequenceActive = false;
                 triggerSequenceStep = 0;
                 firstFireComplete = false;
                 
-                telemetry.addData("✅ Trigger Sequence", "DOUBLE-FIRE COMPLETE - manual indexer control");
+                // Advance indexer after double-fire sequence
+                advanceIndexer();
+                
+                telemetry.addData("✅ Trigger Sequence", "DOUBLE-FIRE COMPLETE - advancing indexer");
                 break;
         }
         
