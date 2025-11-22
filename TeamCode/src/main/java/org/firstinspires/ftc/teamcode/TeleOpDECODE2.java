@@ -519,6 +519,16 @@ public class TeleOpDECODE2 extends LinearOpMode {
             if (aprilTag != null) {
                 List<AprilTagDetection> detections = aprilTag.getDetections();
                 telemetry.addData("Tags Found", detections.size());
+                
+                // Debug: Show all detected tag IDs
+                if (detections.size() > 0) {
+                    StringBuilder tagIds = new StringBuilder();
+                    for (AprilTagDetection detection : detections) {
+                        if (tagIds.length() > 0) tagIds.append(", ");
+                        tagIds.append(detection.id);
+                    }
+                    telemetry.addData("Detected IDs", tagIds.toString());
+                }
             }
         }
         
