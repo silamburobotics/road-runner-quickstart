@@ -35,7 +35,7 @@ public class AutoDECODEFar extends LinearOpMode {
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
     private static final String POSITION = "BACK";
-    private static final Pose2d START_POSE = new Pose2d(0.0, 0.0, 0.0); // Starting pose for Road Runner (origin position)
+    private static final Pose2d START_POSE = new Pose2d(12.0, 108.0, 0.0); // Starting pose for Road Runner (back position)
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -64,17 +64,19 @@ public class AutoDECODEFar extends LinearOpMode {
     public static final double LIGHT_BLUE_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
-    public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
-    public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
+    public static final double TRIGGER_FIRE = 0.10;     // Fire position
+    public static final double TRIGGER_INTERMITTENT = 0.3;  // Intermittent position (between fire and home)
+    public static final double TRIGGER_HOME = 0.76;     // Home/safe position
     
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
+    public static final double TRIGGER_INTERMITTENT_PAUSE = 0.2;  // Pause at intermittent position
     public static final double WAIT_BETWEEN_SHOTS = 1.0;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
     // Road Runner trajectory settings
-    public static final double FORWARD_DISTANCE = 10.0;       // Distance to move sideways (inches)
+    public static final double FORWARD_DISTANCE = 40.0;       // Distance to move sideways (inches)
     
     @Override
     public void runOpMode() {
@@ -88,11 +90,7 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("Start Pose", "X: %.1f\", Y: %.1f\", H: %.1f°", START_POSE.position.x, START_POSE.position.y, Math.toDegrees(START_POSE.heading.toDouble()));
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
         telemetry.addData("1.", "Start shooter + fire 3 shots");
-        telemetry.addData("2.", "Move sideways 10 inches");
-        telemetry.addData("3.", "Go forward 20 inches");
-        telemetry.addData("4.", "Turn 115° left");
-        telemetry.addData("5.", "Move forward 10 inches");
-        telemetry.addData("6.", "Return to start position (0,0)");
+        telemetry.addData("2.", "Move sideways 40 inches using Road Runner (orthogonal to Y axis)");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔵 Blue indicator");
@@ -114,43 +112,34 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Step 1: Start shooter and fire 3 shots
         startShooterSystem();
-        //waitForShooterSpeed();
+        waitForShooterSpeed();
         
-        //fireShot(1);
+        fireShot(1);
         moveIndexorToNextPosition();
-        //waitForShooterSpeed();
+        waitForShooterSpeed();
         
-        //fireShot(2);
+        fireShot(2);
         moveIndexorToNextPosition();
-        //waitForShooterSpeed();
+        waitForShooterSpeed();
         
-        //fireShot(3);
+        fireShot(3);
         
         stopShooterSystem();
         
-        // Step 2: Execute complex trajectory - sideways 10", forward 20", turn 115° left, forward 10"
-        telemetry.addData("🚀 STEP 2", "Executing complex trajectory...");
+        // Step 2: Move sideways 40 inches (orthogonal to Y axis)
+        telemetry.addData("🚀 STEP 2", "Moving sideways %.1f inches...", FORWARD_DISTANCE);
         telemetry.update();
         
-        // Create smooth trajectory with all movements starting from initial position (X is forward, Y is sideways)
-        Action complexTrajectory = drive.actionBuilder(START_POSE)
-                .lineToY(START_POSE.position.y + 10.0)  // Move sideways 10 inches (Y direction)
-                .lineToX(START_POSE.position.x + 20.0)  // Go forward 20 inches (X direction)
-                .turn(Math.toRadians(115))  // Turn 115 degrees left (counterclockwise)
-                .lineToX(START_POSE.position.x + 30.0)  // Move forward 10 more inches (X direction)
+        Action moveForward = drive.actionBuilder(START_POSE)
+                .lineToX(START_POSE.position.x + FORWARD_DISTANCE)  // Move sideways 40 inches (orthogonal to Y axis)
                 .build();
         
-        Actions.runBlocking(complexTrajectory);
-        
-        // Save indexer position for TeleOp
-        double finalIndexerPosition = indexor.getCurrentPosition();
-        RobotState.saveIndexerPosition(finalIndexerPosition);
+        Actions.runBlocking(moveForward);
         
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
-        telemetry.addData("📍 Final Position", "Returned to start position (0,0)");
+        telemetry.addData("📍 Final Position", "40\" sideways from start");
         telemetry.addData("🎯 Shots Fired", "3 shots");
-        telemetry.addData("💾 Indexer Position", "Saved: %.1f ticks for TeleOp", finalIndexerPosition);
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
     }
@@ -161,13 +150,13 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Start shooter with optimized velocity control for consistency
         double initialVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-        // shooter.setVelocity(initialVelocity); // DISABLED FOR TESTING
+        shooter.setVelocity(initialVelocity);
         
         // Start shooter servo
         shooterServo.setPower(SHOOTER_SERVO_POWER);
         
         // Start conveyor to help feed balls
-        // conveyor.setPower(CONVEYOR_POWER); // DISABLED FOR TESTING
+        conveyor.setPower(CONVEYOR_POWER);
         
         // Set alliance indicator light
         speedLight.setPosition(LIGHT_BLUE_POSITION);
@@ -175,7 +164,7 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("✅ Shooter", "Started at %.0f ticks/sec (corrected)", initialVelocity);
         telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("✅ Shooter Servo", "Running at %.1f power", SHOOTER_SERVO_POWER);
-        telemetry.addData("🛑 Conveyor", "DISABLED for testing");
+        telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
         telemetry.addData("🔵 Alliance Light", "Blue indicator active");
         telemetry.update();
     }
@@ -188,7 +177,7 @@ public class AutoDECODEFar extends LinearOpMode {
         timeout.reset();
         
         while (opModeIsActive() && timeout.seconds() < SHOOTER_SPINUP_TIMEOUT) {
-            double currentVelocity = 0; // shooter.getVelocity(); // DISABLED FOR TESTING
+            double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             
             // Update speed light
@@ -230,7 +219,7 @@ public class AutoDECODEFar extends LinearOpMode {
         boolean speedStable = false;
         
         while (opModeIsActive() && stabilizationTimer.seconds() < SHOOTER_STABILIZATION_TIME) {
-            double currentVelocity = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
+            double currentVelocity = shooter.getVelocity();
             double velocityDifference = Math.abs(currentVelocity - lastVelocity);
             double targetDifference = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
             
@@ -241,7 +230,7 @@ public class AutoDECODEFar extends LinearOpMode {
             // Apply velocity correction if needed
             if (targetDifference > SHOOTER_SPEED_TOLERANCE) {
                 double correctedVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-                // shooter.setVelocity(correctedVelocity); // DISABLED FOR TESTING
+                shooter.setVelocity(correctedVelocity);
                 
                 telemetry.addData("🔧 CORRECTING", "Adjusting to %.0f ticks/sec", correctedVelocity);
             }
@@ -275,29 +264,29 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.update();
         
         // Pre-fire velocity check and correction
-        double preFire = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
+        double preFire = shooter.getVelocity();
         double targetDifference = Math.abs(preFire - SHOOTER_TARGET_VELOCITY);
         
         if (targetDifference > SHOOTER_SPEED_TOLERANCE) {
             telemetry.addData("🔧 PRE-FIRE", "Correcting velocity: %.0f → %.0f", preFire, SHOOTER_TARGET_VELOCITY);
-            // shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR); // DISABLED FOR TESTING
+            shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
             telemetry.update();
             sleep(200); // Brief stabilization
         }
         
-        // Move trigger to fire position
+        // FIRST FIRE - Move trigger to fire position
         triggerServo.setPosition(TRIGGER_FIRE);
         
         ElapsedTime fireTimer = new ElapsedTime();
         fireTimer.reset();
         
-        // Wait for fire duration with velocity monitoring
+        // Wait for first fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
-            double currentVelocity = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
+            double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
             
-            telemetry.addData("🎯 Shot", "%d of 3", shotNumber);
+            telemetry.addData("🎯 Shot", "%d of 3 - FIRST FIRE", shotNumber);
             telemetry.addData("💥 Trigger", "FIRE position");
             telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
             telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
@@ -306,7 +295,39 @@ public class AutoDECODEFar extends LinearOpMode {
             // Real-time velocity correction during firing
             if (velocityError > SHOOTER_SPEED_TOLERANCE) {
                 telemetry.addData("🔧 CORRECTING", "Adjusting during fire");
-                // shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR); // DISABLED FOR TESTING
+                shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
+            }
+            
+            telemetry.update();
+            sleep(50);
+        }
+        
+        // INTERMITTENT POSITION - Move to intermediate position
+        triggerServo.setPosition(TRIGGER_INTERMITTENT);
+        telemetry.addData("🔄 Trigger", "INTERMITTENT position");
+        telemetry.update();
+        sleep((long)(TRIGGER_INTERMITTENT_PAUSE * 1000));
+        
+        // SECOND FIRE - Move trigger to fire position again
+        triggerServo.setPosition(TRIGGER_FIRE);
+        fireTimer.reset();
+        
+        // Wait for second fire duration with velocity monitoring
+        while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
+            double currentVelocity = shooter.getVelocity();
+            double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
+            double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
+            
+            telemetry.addData("🎯 Shot", "%d of 3 - SECOND FIRE", shotNumber);
+            telemetry.addData("💥 Trigger", "FIRE position (2nd)");
+            telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
+            telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
+            telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
+            
+            // Real-time velocity correction during firing
+            if (velocityError > SHOOTER_SPEED_TOLERANCE) {
+                telemetry.addData("🔧 CORRECTING", "Adjusting during fire");
+                shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
             }
             
             telemetry.update();
@@ -317,7 +338,7 @@ public class AutoDECODEFar extends LinearOpMode {
         triggerServo.setPosition(TRIGGER_HOME);
         
         // Post-fire velocity check
-        double postFire = SHOOTER_TARGET_VELOCITY; // shooter.getVelocity(); // DISABLED FOR TESTING
+        double postFire = shooter.getVelocity();
         telemetry.addData("✅ Shot %d", "Fired successfully!", shotNumber);
         telemetry.addData("📊 Post-Fire Speed", "%.0f ticks/sec", postFire);
         telemetry.update();
@@ -365,13 +386,13 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.update();
         
         // Stop shooter
-        // shooter.setPower(0); // DISABLED FOR TESTING
+        shooter.setPower(0);
         
         // Stop shooter servo
         shooterServo.setPower(0);
         
         // Stop conveyor
-        // conveyor.setPower(0); // DISABLED FOR TESTING
+        conveyor.setPower(0);
         
         // Turn off speed light
         speedLight.setPosition(LIGHT_OFF_POSITION);
@@ -381,7 +402,7 @@ public class AutoDECODEFar extends LinearOpMode {
         
         telemetry.addData("✅ Shooter", "Stopped");
         telemetry.addData("✅ Shooter Servo", "Stopped");
-        telemetry.addData("🛑 Conveyor", "DISABLED for testing");
+        telemetry.addData("✅ Conveyor", "Stopped");
         telemetry.addData("✅ Speed Light", "Off");
         telemetry.addData("✅ Trigger", "Home position");
         telemetry.update();
@@ -449,10 +470,13 @@ public class AutoDECODEFar extends LinearOpMode {
         conveyor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
-        // Preserve indexer position - do NOT reset encoder (players set initial position)
-        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // Reset encoders
+        indexor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+        // Set indexor to use encoder
+        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 }

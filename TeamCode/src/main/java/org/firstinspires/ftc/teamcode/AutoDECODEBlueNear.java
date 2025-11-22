@@ -35,7 +35,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
     private static final String POSITION = "FRONT";
-    private static final Pose2d START_POSE = new Pose2d(0.0, 0.0, 0.0); // Starting pose for Road Runner - Origin position
+    private static final Pose2d START_POSE = new Pose2d(12.0, 132.0, 0.0); // Starting pose for Road Runner
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -64,12 +64,14 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     public static final double LIGHT_BLUE_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
-    public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
-    public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
+    public static final double TRIGGER_FIRE = 0.10;     // Fire position
+    public static final double TRIGGER_INTERMITTENT = 0.3;  // Intermittent position (between fire and home)
+    public static final double TRIGGER_HOME = 0.76;     // Home/safe position
     
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double WAIT_BETWEEN_SHOTS = 3.0;      // Seconds to wait between shots (stabilization)
+    public static final double TRIGGER_INTERMITTENT_PAUSE = 0.2;  // Pause at intermittent position
+    public static final double WAIT_BETWEEN_SHOTS = 1.0;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
@@ -116,7 +118,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
                 .build();
         
         Action moveLeft = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
-                .lineToY(START_POSE.position.y + 25)  // Move forward 25 inches
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y + LEFTWARD_DISTANCE), START_POSE.heading.toDouble())  // Strafe forward 12 inches (perpendicular to first movement)
                 .build();
         
         // Step 1: Move left 32 inches
@@ -149,15 +151,10 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         telemetry.update();
         Actions.runBlocking(moveLeft);
         
-        // Save indexer position for TeleOp
-        double finalIndexerPosition = indexor.getCurrentPosition();
-        RobotState.saveIndexerPosition(finalIndexerPosition);
-        
         telemetry.addData("✅ AUTONOMOUS", "Blue Near Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
         telemetry.addData("📍 Final Position", "50\" left + 12\" forward from start");
         telemetry.addData("🎯 Shots Fired", "3 shots");
-        telemetry.addData("💾 Indexer Position", "Saved: %.1f ticks for TeleOp", finalIndexerPosition);
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
     }
@@ -292,20 +289,52 @@ public class AutoDECODEBlueNear extends LinearOpMode {
             sleep(200); // Brief stabilization
         }
         
-        // Move trigger to fire position
+        // FIRST FIRE - Move trigger to fire position
         triggerServo.setPosition(TRIGGER_FIRE);
         
         ElapsedTime fireTimer = new ElapsedTime();
         fireTimer.reset();
         
-        // Wait for fire duration with velocity monitoring
+        // Wait for first fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
             double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
             
-            telemetry.addData("🎯 Shot", "%d of 3", shotNumber);
+            telemetry.addData("🎯 Shot", "%d of 3 - FIRST FIRE", shotNumber);
             telemetry.addData("💥 Trigger", "FIRE position");
+            telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
+            telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
+            telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
+            
+            // Real-time velocity correction during firing
+            if (velocityError > SHOOTER_SPEED_TOLERANCE) {
+                telemetry.addData("🔧 CORRECTING", "Adjusting during fire");
+                shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
+            }
+            
+            telemetry.update();
+            sleep(50);
+        }
+        
+        // INTERMITTENT POSITION - Move to intermediate position
+        triggerServo.setPosition(TRIGGER_INTERMITTENT);
+        telemetry.addData("🔄 Trigger", "INTERMITTENT position");
+        telemetry.update();
+        sleep((long)(TRIGGER_INTERMITTENT_PAUSE * 1000));
+        
+        // SECOND FIRE - Move trigger to fire position again
+        triggerServo.setPosition(TRIGGER_FIRE);
+        fireTimer.reset();
+        
+        // Wait for second fire duration with velocity monitoring
+        while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
+            double currentVelocity = shooter.getVelocity();
+            double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
+            double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
+            
+            telemetry.addData("🎯 Shot", "%d of 3 - SECOND FIRE", shotNumber);
+            telemetry.addData("💥 Trigger", "FIRE position (2nd)");
             telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
             telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
             telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
@@ -456,10 +485,13 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         conveyor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
-        // Preserve indexer position - do NOT reset encoder (players set initial position)
-        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // Reset encoders
+        indexor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+        // Set indexor to use encoder
+        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 }
