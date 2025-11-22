@@ -142,10 +142,15 @@ public class AutoDECODEFar extends LinearOpMode {
         
         Actions.runBlocking(complexTrajectory);
         
+        // Save indexer position for TeleOp
+        double finalIndexerPosition = indexor.getCurrentPosition();
+        RobotState.saveIndexerPosition(finalIndexerPosition);
+        
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
         telemetry.addData("📍 Final Position", "Returned to start position (0,0)");
         telemetry.addData("🎯 Shots Fired", "3 shots");
+        telemetry.addData("💾 Indexer Position", "Saved: %.1f ticks for TeleOp", finalIndexerPosition);
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
     }
@@ -444,13 +449,10 @@ public class AutoDECODEFar extends LinearOpMode {
         conveyor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
-        // Reset encoders
-        indexor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        // Preserve indexer position - do NOT reset encoder (players set initial position)
+        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        
-        // Set indexor to use encoder
-        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
     }
 }
