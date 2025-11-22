@@ -520,14 +520,12 @@ public class TeleOpDECODE2 extends LinearOpMode {
                 List<AprilTagDetection> detections = aprilTag.getDetections();
                 telemetry.addData("Tags Found", detections.size());
                 
-                // Debug: Show all detected tag IDs
-                if (detections.size() > 0) {
-                    StringBuilder tagIds = new StringBuilder();
-                    for (AprilTagDetection detection : detections) {
-                        if (tagIds.length() > 0) tagIds.append(", ");
-                        tagIds.append(detection.id);
-                    }
-                    telemetry.addData("Detected IDs", tagIds.toString());
+                // Show details for each detected tag
+                for (AprilTagDetection detection : detections) {
+                    telemetry.addData("Tag ID", detection.id);
+                    telemetry.addData("  Range", "%.2f inches", detection.ftcPose.range);
+                    telemetry.addData("  Bearing", "%.1f°", Math.toDegrees(detection.ftcPose.bearing));
+                    telemetry.addData("  Yaw", "%.1f°", Math.toDegrees(detection.ftcPose.yaw));
                 }
             }
         }
