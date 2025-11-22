@@ -39,7 +39,7 @@ public class ShooterSubsystem {
     
     // Shooter velocity settings
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1530;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)

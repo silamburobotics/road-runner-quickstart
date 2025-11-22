@@ -48,7 +48,7 @@ public class AutoDECODERedNear extends LinearOpMode {
     public static final int INDEXOR_TICKS = 179;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Blue alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1150;      // Range: 1200-1800 ticks/sec (Blue near position)
+    public static double SHOOTER_TARGET_VELOCITY = 1250;      // Range: 1200-1800 ticks/sec (Blue near position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
@@ -71,7 +71,7 @@ public class AutoDECODERedNear extends LinearOpMode {
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
     public static final double TRIGGER_INTERMITTENT_PAUSE = 0.2;  // Pause at intermittent position
-    public static final double WAIT_BETWEEN_SHOTS = 1.0;      // Seconds to wait between shots (stabilization)
+    public static final double WAIT_BETWEEN_SHOTS = 3.0;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
@@ -133,6 +133,8 @@ public class AutoDECODERedNear extends LinearOpMode {
         // Step 2: Start shooter and fire 3 shots
         startShooterSystem();
         waitForShooterSpeed();
+
+        sleep((long)(WAIT_BETWEEN_SHOTS * 1000));
         
         fireShot(1);
         moveIndexorToNextPosition();
@@ -143,6 +145,7 @@ public class AutoDECODERedNear extends LinearOpMode {
         waitForShooterSpeed();
         
         fireShot(3);
+        moveIndexorToNextPosition();
         
         stopShooterSystem();
         
