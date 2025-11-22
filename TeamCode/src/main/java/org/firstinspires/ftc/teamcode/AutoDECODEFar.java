@@ -114,7 +114,7 @@ public class AutoDECODEFar extends LinearOpMode {
         startShooterSystem();
         waitForShooterSpeed();
 
-        sleep((long)(WAIT_BETWEEN_SHOTS * 1000));
+        sleep((long)(WAIT_BETWEEN_SHOTS * 3000));
         
         fireShot(1);
         moveIndexorToNextPosition();
@@ -125,8 +125,9 @@ public class AutoDECODEFar extends LinearOpMode {
         waitForShooterSpeed();
         
         fireShot(3);
-
         moveIndexorToNextPosition();
+        waitForShooterSpeed();
+        
         
         stopShooterSystem();
         
