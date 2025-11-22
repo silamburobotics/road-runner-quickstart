@@ -59,6 +59,7 @@ public class TeleOpDECODE extends LinearOpMode {
     private boolean previousA1 = false;  // Gamepad1 A button (intake)
     private boolean previousB1 = false;  // Gamepad1 B button (shooter speed 1300)
     private boolean previousY1 = false;  // Gamepad1 Y button (shooter speed 1600)
+    private boolean previousA2 = false;  // Gamepad2 A button (AprilTag alignment)
     private boolean previousB2 = false;  // Gamepad2 B button (trigger)
     private boolean previousX2 = false;  // Gamepad2 X button (advance indexer)
     private boolean previousLeftBumper2 = false;  // Gamepad2 left bumper (indexer +10 degrees)
@@ -103,8 +104,8 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double INDEXOR_TICKS_PER_10_DEGREES = INDEXOR_TICKS_PER_DEGREE * 10.0;  // ~14.94 ticks per 10°
     
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_BUTTON = 1300;  // Button-based velocity
-    public static final double SHOOTER_TARGET_VELOCITY_DISTANCE = 1500; // Distance-based velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1600;  // Y button velocity
     
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
@@ -139,6 +140,14 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double STRAFE_SPEED_MULTIPLIER = 0.8;
     public static final double TURN_SPEED_MULTIPLIER = 0.6;
     
+    // AprilTag alignment settings
+    public static final double ALIGNMENT_TURN_POWER = 0.3;    // Power for alignment turns
+    public static final double ALIGNMENT_TOLERANCE = 2.0;      // Degrees tolerance for "aligned"
+    public static final double MAX_ALIGNMENT_TIME = 3.0;       // Maximum time for alignment attempt
+    private boolean alignmentActive = false;
+    private ElapsedTime alignmentTimer = new ElapsedTime();
+    private double targetBearing = 0.0;
+    
     @Override
     public void runOpMode() {
         // Initialize hardware
@@ -159,6 +168,7 @@ public class TeleOpDECODE extends LinearOpMode {
         telemetry.addData("Right Stick X", "Turn");
         telemetry.addData("", "");
         telemetry.addData("GAMEPAD2 CONTROLS:", "");
+        telemetry.addData("A", "Align with AprilTag");
         telemetry.addData("X", "Advance Indexer");
         telemetry.addData("B", "Trigger Function");
         telemetry.addData("Left Stick -Y", "Outtake Function");
@@ -172,6 +182,7 @@ public class TeleOpDECODE extends LinearOpMode {
             readColorSensors();
             handleGamepad1Controls();
             handleGamepad2Controls();
+            handleAprilTagAlignment();
             handleIndexorStuckDetection();
             handleTriggerSequence();
             updateShooterSpeedMonitoring();
@@ -354,10 +365,16 @@ public class TeleOpDECODE extends LinearOpMode {
         }
         
         // Get current button states for gamepad2
+        boolean currentA2 = gamepad2.a;
         boolean currentX2 = gamepad2.x;
         boolean currentB2 = gamepad2.b;
         boolean currentLeftBumper2 = gamepad2.left_bumper;
         boolean currentLeftTrigger2 = gamepad2.left_trigger > 0.5;  // Treat trigger as button when > 50%
+        
+        // Handle A button - Align with AprilTag
+        if (currentA2 && !previousA2) {
+            startAprilTagAlignment();
+        }
         
         // Handle X button - Advance Indexer
         if (currentX2 && !previousX2) {
@@ -380,6 +397,7 @@ public class TeleOpDECODE extends LinearOpMode {
         }
         
         // Update previous states
+        previousA2 = currentA2;
         previousX2 = currentX2;
         previousB2 = currentB2;
         previousLeftBumper2 = currentLeftBumper2;
@@ -708,27 +726,6 @@ public class TeleOpDECODE extends LinearOpMode {
         telemetry.update();
     }
     
-    private double determineShooterVelocity() {
-        // Check for AprilTag distance-based velocity
-        if (visionPortal != null && aprilTag != null) {
-            List<AprilTagDetection> detections = aprilTag.getDetections();
-            
-            for (AprilTagDetection detection : detections) {
-                if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
-                    double distance = detection.ftcPose.range;
-                    
-                    if (Math.abs(distance - OPTIMAL_SHOOTING_DISTANCE) < 6.0) {
-                        // Close to optimal distance - use distance-based velocity
-                        return SHOOTER_TARGET_VELOCITY_DISTANCE;
-                    }
-                }
-            }
-        }
-        
-        // Default to button-based velocity
-        return SHOOTER_TARGET_VELOCITY_BUTTON;
-    }
-    
     /**
      * Function Trigger
      * 1) Check shooter is running at target velocity
@@ -848,6 +845,11 @@ public class TeleOpDECODE extends LinearOpMode {
     }
     
     private void handleMecanumDrive() {
+        // Skip manual drive if alignment is active
+        if (alignmentActive) {
+            return;
+        }
+        
         // Standard mecanum drive
         double drive = gamepad1.left_stick_y * DRIVE_SPEED_MULTIPLIER;
         double strafe = gamepad1.left_stick_x * STRAFE_SPEED_MULTIPLIER;
@@ -961,5 +963,141 @@ public class TeleOpDECODE extends LinearOpMode {
                 telemetry.addData("🎾 Auto Advance", "Ball detected - advancing indexer");
             }
         }
+    }
+    
+    /**
+     * Start AprilTag alignment sequence
+     * Finds AprilTag #20 and aligns robot to face it
+     */
+    private void startAprilTagAlignment() {
+        if (alignmentActive) {
+            telemetry.addData("⚠️ Alignment", "Already in progress");
+            return;
+        }
+        
+        // Check if AprilTag system is available
+        if (visionPortal == null || aprilTag == null) {
+            telemetry.addData("❌ Alignment", "AprilTag system not available");
+            telemetry.update();
+            return;
+        }
+        
+        // Look for AprilTag #20
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        AprilTagDetection targetTag = null;
+        
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
+                targetTag = detection;
+                break;
+            }
+        }
+        
+        if (targetTag == null) {
+            telemetry.addData("❌ Alignment", "AprilTag #%d not found", TARGET_TAG_ID);
+            telemetry.update();
+            return;
+        }
+        
+        // Start alignment
+        targetBearing = targetTag.ftcPose.bearing;
+        alignmentActive = true;
+        alignmentTimer.reset();
+        
+        telemetry.addData("🎯 Alignment STARTED", "Target bearing: %.1f°", targetBearing);
+        telemetry.addData("📏 Distance", "%.1f inches", targetTag.ftcPose.range);
+        telemetry.update();
+    }
+    
+    /**
+     * Handle AprilTag alignment process
+     * Continuously adjusts robot rotation until aligned with target
+     */
+    private void handleAprilTagAlignment() {
+        if (!alignmentActive) {
+            return;
+        }
+        
+        // Check timeout
+        if (alignmentTimer.seconds() > MAX_ALIGNMENT_TIME) {
+            stopAlignment("Timeout reached");
+            return;
+        }
+        
+        // Check for manual override (any gamepad input)
+        if (Math.abs(gamepad1.left_stick_x) > 0.1 || Math.abs(gamepad1.left_stick_y) > 0.1 || 
+            Math.abs(gamepad1.right_stick_x) > 0.1 || gamepad2.a) {
+            stopAlignment("Manual override");
+            return;
+        }
+        
+        // Get current AprilTag detection
+        if (visionPortal == null || aprilTag == null) {
+            stopAlignment("Vision system lost");
+            return;
+        }
+        
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        AprilTagDetection targetTag = null;
+        
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
+                targetTag = detection;
+                break;
+            }
+        }
+        
+        if (targetTag == null) {
+            stopAlignment("AprilTag lost");
+            return;
+        }
+        
+        // Calculate bearing error
+        double currentBearing = targetTag.ftcPose.bearing;
+        double bearingError = currentBearing;
+        
+        // Check if aligned (within tolerance)
+        if (Math.abs(bearingError) < ALIGNMENT_TOLERANCE) {
+            stopAlignment("Aligned successfully!");
+            return;
+        }
+        
+        // Calculate turn power (proportional control)
+        double turnPower = bearingError * 0.02; // Proportional gain
+        turnPower = Math.max(-ALIGNMENT_TURN_POWER, Math.min(ALIGNMENT_TURN_POWER, turnPower));
+        
+        // Apply turn movement (positive bearing = turn right)
+        double frontLeftPower = turnPower;
+        double frontRightPower = -turnPower;
+        double backLeftPower = turnPower;
+        double backRightPower = -turnPower;
+        
+        leftFront.setPower(backLeftPower);
+        rightFront.setPower(backRightPower);
+        leftBack.setPower(frontLeftPower);
+        rightBack.setPower(frontRightPower);
+        
+        telemetry.addData("🎯 ALIGNING", "Bearing error: %.1f°", bearingError);
+        telemetry.addData("🔄 Turn Power", "%.2f", turnPower);
+        telemetry.addData("📏 Distance", "%.1f inches", targetTag.ftcPose.range);
+        telemetry.addData("⏱️ Time", "%.1f / %.1f seconds", alignmentTimer.seconds(), MAX_ALIGNMENT_TIME);
+        telemetry.update();
+    }
+    
+    /**
+     * Stop alignment sequence and return to manual control
+     */
+    private void stopAlignment(String reason) {
+        alignmentActive = false;
+        
+        // Stop all drive motors
+        leftFront.setPower(0);
+        rightFront.setPower(0);
+        leftBack.setPower(0);
+        rightBack.setPower(0);
+        
+        telemetry.addData("✅ Alignment STOPPED", "%s", reason);
+        telemetry.addData("⏱️ Total Time", "%.1f seconds", alignmentTimer.seconds());
+        telemetry.update();
     }
 }

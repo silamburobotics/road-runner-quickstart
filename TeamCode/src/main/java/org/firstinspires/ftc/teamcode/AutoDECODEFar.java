@@ -128,31 +128,35 @@ public class AutoDECODEFar extends LinearOpMode {
         
         stopShooterSystem();
         
-        // Step 2: Execute complex trajectory - forward 20", turn 135° right, reverse 30"
+        // Step 2: Execute complex trajectory - sideways 10", forward 20", turn 115° left, forward 10"
         telemetry.addData("🚀 STEP 2", "Executing complex trajectory...");
         telemetry.update();
         
-        // Calculate final position after initial movement
-        Pose2d positionAfterFirstMove = new Pose2d(START_POSE.position.x + FORWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble());
-        
-        // Create smooth trajectory with all movements (X is forward in your coordinate system)
-        Action complexTrajectory = drive.actionBuilder(positionAfterFirstMove)
-                .lineToX(positionAfterFirstMove.position.x + 20.0)  // Go forward 20 inches (X direction)
-                .turn(Math.toRadians(-115))  // Turn 135 degrees right (clockwise)
-                .lineToX(positionAfterFirstMove.position.x + 20 + 10)  // Come reverse 30 inches (X direction)
+        // Create smooth trajectory with all movements starting from initial position (X is forward, Y is sideways)
+        Action complexTrajectory = drive.actionBuilder(START_POSE)
+                .lineToY(START_POSE.position.y + 10.0)  // Move sideways 10 inches (Y direction)
+                .lineToX(START_POSE.position.x + 20.0)  // Go forward 20 inches (X direction)
+                .turn(Math.toRadians(115))  // Turn 115 degrees left (counterclockwise)
+                .lineToX(START_POSE.position.x + 30.0)  // Move forward 10 more inches (X direction)
                 .build();
         
         Actions.runBlocking(complexTrajectory);
+        
+        // Get final position after complex trajectory
+        Pose2d finalPosition = drive.pose;
+        telemetry.addData("📍 Complex Trajectory", "Completed!");
+        telemetry.addData("📍 Final Position", "X: %.1f\", Y: %.1f\", H: %.1f°", 
+            finalPosition.position.x, finalPosition.position.y, Math.toDegrees(finalPosition.heading.toDouble()));
+        telemetry.update();
         
         // Step 3: Return to initial position
         telemetry.addData("🚀 STEP 3", "Returning to initial position...");
         telemetry.update();
         
         // Create trajectory to return to start position (0, 0) with original heading
-        Action returnToStart = drive.actionBuilder(complexTrajectory.end())
-                .lineToX(10.0)  // Go forward 20 inches (X direction)
-                .turn(Math.toRadians(115))  // Turn 135 degrees right (clockwise)
-                .lineToX(0)  // Come reverse 30 inches (X direction)
+        Action returnToStart = drive.actionBuilder(finalPosition)
+                .lineToXLinearHeading(0.0, Math.toRadians(0))  // Return to X=0 and original heading
+                .lineToY(0.0)  // Return to Y=0
                 .build();
         
         Actions.runBlocking(returnToStart);
