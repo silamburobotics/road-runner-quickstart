@@ -71,7 +71,7 @@ public class AutoDECODEFar extends LinearOpMode {
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
     public static final double TRIGGER_INTERMITTENT_PAUSE = 0.2;  // Pause at intermittent position
-    public static final double WAIT_BETWEEN_SHOTS = 3.0;      // Seconds to wait between shots (stabilization)
+    public static final double WAIT_BETWEEN_SHOTS = 1.0;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
@@ -125,6 +125,8 @@ public class AutoDECODEFar extends LinearOpMode {
         waitForShooterSpeed();
         
         fireShot(3);
+
+        moveIndexorToNextPosition();
         
         stopShooterSystem();
         
@@ -284,6 +286,9 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Wait for first fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
+            // Continuously reapply shooter velocity to maintain consistent speed
+            shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
+            
             double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
@@ -293,12 +298,6 @@ public class AutoDECODEFar extends LinearOpMode {
             telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
             telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
             telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
-            
-            // Real-time velocity correction during firing
-            if (velocityError > SHOOTER_SPEED_TOLERANCE) {
-                telemetry.addData("🔧 CORRECTING", "Adjusting during fire");
-                shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
-            }
             
             telemetry.update();
             sleep(50);
@@ -316,6 +315,9 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Wait for second fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
+            // Continuously reapply shooter velocity to maintain consistent speed
+            shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
+            
             double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
@@ -325,12 +327,6 @@ public class AutoDECODEFar extends LinearOpMode {
             telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
             telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
             telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
-            
-            // Real-time velocity correction during firing
-            if (velocityError > SHOOTER_SPEED_TOLERANCE) {
-                telemetry.addData("🔧 CORRECTING", "Adjusting during fire");
-                shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
-            }
             
             telemetry.update();
             sleep(50);
