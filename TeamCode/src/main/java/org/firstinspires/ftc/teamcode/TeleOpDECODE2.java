@@ -81,7 +81,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
     public static final double MAX_ALIGNMENT_TIME = 3.0;
     private boolean alignmentActive = false;
     private ElapsedTime alignmentTimer = new ElapsedTime();
-    private double targetBearing = 0.0;
+    private int targetTagId = 0;
     
     @Override
     public void runOpMode() {
@@ -415,12 +415,21 @@ public class TeleOpDECODE2 extends LinearOpMode {
         List<AprilTagDetection> detections = aprilTag.getDetections();
         AprilTagDetection targetTag = null;
         
-        // Look for either tag ID 20 or 24
+        // Look for tag 24 first (secondary), then tag 20 (primary)
         for (AprilTagDetection detection : detections) {
-            if ((detection.id == TARGET_TAG_ID_PRIMARY || detection.id == TARGET_TAG_ID_SECONDARY) 
-                && detection.ftcPose != null) {
+            if (detection.id == TARGET_TAG_ID_SECONDARY && detection.ftcPose != null) {
                 targetTag = detection;
                 break;
+            }
+        }
+        
+        // If tag 24 not found, look for tag 20
+        if (targetTag == null) {
+            for (AprilTagDetection detection : detections) {
+                if (detection.id == TARGET_TAG_ID_PRIMARY && detection.ftcPose != null) {
+                    targetTag = detection;
+                    break;
+                }
             }
         }
         
@@ -430,11 +439,11 @@ public class TeleOpDECODE2 extends LinearOpMode {
             return;
         }
         
-        targetBearing = targetTag.ftcPose.bearing;
+        targetTagId = targetTag.id;
         alignmentActive = true;
         alignmentTimer.reset();
         
-        telemetry.addData("✅ Alignment", "Started - Tag #%d at %.1f°", targetTag.id, targetBearing);
+        telemetry.addData("✅ Alignment", "Started - Tag #%d at %.1f°", targetTag.id, targetTag.ftcPose.bearing);
         telemetry.update();
     }
     
@@ -450,17 +459,38 @@ public class TeleOpDECODE2 extends LinearOpMode {
             return;
         }
         
-        if (Math.abs(targetBearing) <= ALIGNMENT_TOLERANCE) {
+        // Continuously get current position of target tag
+        List<AprilTagDetection> detections = aprilTag.getDetections();
+        AprilTagDetection currentTag = null;
+        
+        for (AprilTagDetection detection : detections) {
+            if (detection.id == targetTagId && detection.ftcPose != null) {
+                currentTag = detection;
+                break;
+            }
+        }
+        
+        if (currentTag == null) {
+            // Lost sight of tag - stop alignment
+            alignmentActive = false;
+            setDrivePower(0, 0, 0, 0);
+            telemetry.addData("❌ Alignment", "Lost sight of Tag #%d", targetTagId);
+            return;
+        }
+        
+        double currentBearing = currentTag.ftcPose.bearing;
+        
+        if (Math.abs(currentBearing) <= Math.toRadians(ALIGNMENT_TOLERANCE)) {
             alignmentActive = false;
             setDrivePower(0, 0, 0, 0);
             telemetry.addData("✅ Alignment", "Complete!");
             return;
         }
         
-        double turnPower = targetBearing > 0 ? ALIGNMENT_TURN_POWER : -ALIGNMENT_TURN_POWER;
+        double turnPower = currentBearing > 0 ? ALIGNMENT_TURN_POWER : -ALIGNMENT_TURN_POWER;
         setDrivePower(-turnPower, turnPower, -turnPower, turnPower);
         
-        telemetry.addData("🎯 Aligning", "Bearing: %.1f°", targetBearing);
+        telemetry.addData("🎯 Aligning", "Tag #%d Bearing: %.1f°", targetTagId, Math.toDegrees(currentBearing));
     }
     
     private void handleMecanumDrive() {
