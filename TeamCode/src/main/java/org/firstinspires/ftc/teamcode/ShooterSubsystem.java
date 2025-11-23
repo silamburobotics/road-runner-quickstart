@@ -43,9 +43,9 @@ public class ShooterSubsystem {
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
-    public static final double TRIGGER_INTERMITTENT = 0.25;  // Intermittent position (65.7 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
-    public static final double TRIGGER_FIRE_DURATION = 0.5;  // Fire duration in seconds
+    public static final double TRIGGER_FIRE_DURATION = 0.3;  // Fire duration in seconds (reduced from 0.5)
+    public static final double INDEXER_ADVANCE_WAIT = 0.2;   // Wait time for indexer to advance
     
     // Speed light control settings
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
@@ -53,10 +53,10 @@ public class ShooterSubsystem {
     public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
     
     // Speed monitoring thresholds
-    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
+    public static final double SHOOTER_SPEED_THRESHOLD = 0.92; // 92% of target speed for green light (reduced from 0.95)
     public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
-    public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 1.0;   // Seconds to wait for speed stabilization
+    public static final double SHOOTER_SPEED_TOLERANCE = 75;       // ticks/sec tolerance for "stable" speed (increased from 50)
+    public static final double SHOOTER_STABILIZATION_TIME = 0.5;   // Seconds to wait for speed stabilization (reduced from 1.0)
     
     // Indexor stuck detection
     public static final double INDEXOR_STUCK_TIMEOUT = 0.5;  // 0.5 seconds as specified
@@ -75,8 +75,8 @@ public class ShooterSubsystem {
     
     private boolean triggerSequenceActive = false;
     private ElapsedTime triggerTimer = new ElapsedTime();
-    private int triggerSequenceStep = 0;  // 0=home, 1=first fire, 2=intermittent, 3=second fire, 4=complete
-    private boolean firstFireComplete = false;
+    private int triggerSequenceStep = 0;  // 0=home, 1-8 for 3-shot sequence
+    private int shotsFired = 0;
     
     /**
      * Initialize the shooter subsystem
@@ -225,7 +225,7 @@ public class ShooterSubsystem {
     }
     
     /**
-     * Start trigger sequence (double-fire with intermittent position)
+     * Start trigger sequence (3-shot rapid fire with indexer advance between shots)
      */
     public void startTriggerSequence() {
         if (triggerSequenceActive) {
@@ -236,7 +236,7 @@ public class ShooterSubsystem {
             return; // Shooter must be running
         }
         
-        // Start trigger sequence - move to fire position
+        // Start trigger sequence - move to fire position for first shot
         triggerServo.setPosition(TRIGGER_FIRE);
         
         // Put indexer in float mode while trigger is firing
@@ -246,7 +246,7 @@ public class ShooterSubsystem {
         
         triggerSequenceActive = true;
         triggerSequenceStep = 1;  // Step 1: First fire
-        firstFireComplete = false;
+        shotsFired = 0;
         triggerTimer.reset();
     }
     
@@ -311,7 +311,7 @@ public class ShooterSubsystem {
     }
     
     /**
-     * Handle trigger sequence state machine
+     * Handle trigger sequence state machine (3 shots with indexer advance)
      */
     private void handleTriggerSequence() {
         if (!triggerSequenceActive) {
@@ -321,40 +321,72 @@ public class ShooterSubsystem {
         double elapsedTime = triggerTimer.seconds();
         
         switch (triggerSequenceStep) {
-            case 1: // First fire position
+            case 1: // First shot - fire position
                 if (elapsedTime >= TRIGGER_FIRE_DURATION) {
-                    // Move to intermittent position
-                    triggerServo.setPosition(TRIGGER_INTERMITTENT);
+                    triggerServo.setPosition(TRIGGER_HOME);
+                    shotsFired = 1;
                     triggerSequenceStep = 2;
-                    firstFireComplete = true;
                     triggerTimer.reset();
                 }
                 break;
                 
-            case 2: // Intermittent position (brief pause)
-                if (elapsedTime >= 0.2) {  // 0.2 second pause at intermittent
-                    // Move to second fire position
-                    triggerServo.setPosition(TRIGGER_FIRE);
+            case 2: // First shot complete - advance indexer
+                if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
+                    advanceIndexer();
                     triggerSequenceStep = 3;
                     triggerTimer.reset();
                 }
                 break;
                 
-            case 3: // Second fire position
+            case 3: // Second shot - fire position
                 if (elapsedTime >= TRIGGER_FIRE_DURATION) {
-                    // Return to home position
-                    triggerServo.setPosition(TRIGGER_HOME);
+                    triggerServo.setPosition(TRIGGER_FIRE);
                     triggerSequenceStep = 4;
+                    triggerTimer.reset();
                 }
                 break;
                 
-            case 4: // Sequence complete - advance indexer
-                triggerSequenceActive = false;
-                triggerSequenceStep = 0;
-                firstFireComplete = false;
+            case 4: // Second shot hold
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_HOME);
+                    shotsFired = 2;
+                    triggerSequenceStep = 5;
+                    triggerTimer.reset();
+                }
+                break;
                 
-                // Advance indexer after double-fire sequence
-                advanceIndexer();
+            case 5: // Second shot complete - advance indexer
+                if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
+                    advanceIndexer();
+                    triggerSequenceStep = 6;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 6: // Third shot - fire position
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_FIRE);
+                    triggerSequenceStep = 7;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 7: // Third shot hold
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_HOME);
+                    shotsFired = 3;
+                    triggerSequenceStep = 8;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 8: // Final advance indexer
+                if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
+                    advanceIndexer();
+                    triggerSequenceStep = 0;
+                    triggerSequenceActive = false;
+                    shotsFired = 0;
+                }
                 break;
         }
     }
@@ -418,6 +450,7 @@ public class ShooterSubsystem {
     public double getIndexorLastSuccessfulPosition() { return indexorLastSuccessfulPosition; }
     public boolean isTriggerSequenceActive() { return triggerSequenceActive; }
     public int getTriggerSequenceStep() { return triggerSequenceStep; }
+    public int getShotsFired() { return shotsFired; }
     public int getIndexorCurrentPosition() { return indexor.getCurrentPosition(); }
     public double getShooterCurrentVelocity() { return shooter.getVelocity(); }
     
