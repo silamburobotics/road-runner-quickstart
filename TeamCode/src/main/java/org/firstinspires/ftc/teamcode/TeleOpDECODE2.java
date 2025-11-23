@@ -404,15 +404,34 @@ public class TeleOpDECODE2 extends LinearOpMode {
         
         if (visionPortal == null || aprilTag == null) {
             telemetry.addData("❌ Alignment", "AprilTag system not available");
+            telemetry.update();
             return;
         }
         
         if (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
             telemetry.addData("❌ Alignment", "Camera not streaming");
+            telemetry.update();
             return;
         }
         
         List<AprilTagDetection> detections = aprilTag.getDetections();
+        
+        // Display all detected tags
+        telemetry.clear();
+        telemetry.addData("=== APRILTAG DETECTION ===", "");
+        telemetry.addData("Total Tags Found", detections.size());
+        telemetry.addData("", "");
+        
+        for (AprilTagDetection detection : detections) {
+            if (detection.ftcPose != null) {
+                telemetry.addData("Tag ID", detection.id);
+                telemetry.addData("  Range", "%.2f inches", detection.ftcPose.range);
+                telemetry.addData("  Bearing", "%.1f°", Math.toDegrees(detection.ftcPose.bearing));
+                telemetry.addData("  Yaw", "%.1f°", Math.toDegrees(detection.ftcPose.yaw));
+                telemetry.addData("", "");
+            }
+        }
+        
         AprilTagDetection targetTag = null;
         
         // Look for tag 24 first (secondary), then tag 20 (primary)
@@ -436,6 +455,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         if (targetTag == null) {
             telemetry.addData("❌ Alignment", "AprilTag #%d or #%d not found", 
                 TARGET_TAG_ID_PRIMARY, TARGET_TAG_ID_SECONDARY);
+            telemetry.update();
             return;
         }
         
@@ -443,7 +463,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         alignmentActive = true;
         alignmentTimer.reset();
         
-        telemetry.addData("✅ Alignment", "Started - Tag #%d at %.1f°", targetTag.id, targetTag.ftcPose.bearing);
+        telemetry.addData("✅ Alignment", "Started - Tag #%d", targetTag.id);
         telemetry.update();
     }
     
