@@ -25,10 +25,10 @@ public class ShooterSpeedTest extends LinearOpMode {
     
     // Tunable speed control parameters
     public static double TARGET_VELOCITY = 1300;  // Target shooter speed (ticks/sec)
-    public static double VELOCITY_P = 1.0;  // Proportional coefficient for internal PID (reduced to prevent overshoot)
-    public static double VELOCITY_I = 0.1;  // Integral coefficient for internal PID (reduced to prevent wind-up)
-    public static double VELOCITY_D = 0.1;  // Derivative coefficient for internal PID (added to dampen oscillation)
-    public static double VELOCITY_F = 12.5;  // Feedforward coefficient for internal PID
+    public static double VELOCITY_P = 1.2;  // Proportional coefficient for internal PID
+    public static double VELOCITY_I = 0.08;  // Integral coefficient for internal PID (reduced to prevent wind-up)
+    public static double VELOCITY_D = 0.15;  // Derivative coefficient for internal PID (dampen oscillation)
+    public static double VELOCITY_F = 11.8;  // Feedforward coefficient (reduced to prevent overshoot)
     
     // Tunable timing parameters
     public static double FIRE_DURATION = 0.3;  // How long trigger stays in fire position
