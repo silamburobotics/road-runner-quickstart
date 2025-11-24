@@ -41,6 +41,12 @@ public class ShooterSubsystem {
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
+    // Shooter PID coefficients for velocity control
+    public static double VELOCITY_P = 1.2;  // Proportional coefficient
+    public static double VELOCITY_I = 0.08;  // Integral coefficient
+    public static double VELOCITY_D = 0.15;  // Derivative coefficient
+    public static double VELOCITY_F = 11.8;  // Feedforward coefficient
+    
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
@@ -119,7 +125,11 @@ public class ShooterSubsystem {
         indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+        // Set shooter PID coefficients
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
         
         // Preserve indexor position from previous run
         indexorLastSuccessfulPosition = indexor.getCurrentPosition();
@@ -254,6 +264,9 @@ public class ShooterSubsystem {
      * Update all subsystem states (call this in loop)
      */
     public void update() {
+        // Update PID coefficients if changed via dashboard
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
+        
         handleIndexorStuckDetection();
         handleTriggerSequence();
         updateShooterSpeedMonitoring();
