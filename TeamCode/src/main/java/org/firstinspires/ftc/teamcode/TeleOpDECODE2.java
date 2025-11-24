@@ -75,23 +75,15 @@ public class TeleOpDECODE2 extends LinearOpMode {
     public static final double STRAFE_SPEED_MULTIPLIER = 0.8;
     public static final double TURN_SPEED_MULTIPLIER = 0.6;
     
-    // AprilTag alignment PID settings
-    public static final double ALIGNMENT_KP = 0.012;  // Proportional gain
-    public static final double ALIGNMENT_KI = 0.0005;  // Integral gain (very small to prevent wind-up)
-    public static final double ALIGNMENT_KD = 0.002;  // Derivative gain (dampen oscillation)
+    // AprilTag alignment settings
     public static final double ALIGNMENT_MAX_TURN_POWER = 0.3;  // Maximum turn power
-    public static final double ALIGNMENT_MIN_TURN_POWER = 0.06;  // Minimum turn power (prevent stalling)
-    public static final double ALIGNMENT_TOLERANCE = 0.5;  // Tolerance in degrees
+    public static final double ALIGNMENT_MIN_TURN_POWER = 0.08;  // Minimum turn power (prevent stalling)
+    public static final double ALIGNMENT_PROPORTIONAL_GAIN = 0.015;  // Proportional gain for smooth approach
+    public static final double ALIGNMENT_TOLERANCE = 0.5;
     public static final double MAX_ALIGNMENT_TIME = 3.0;
-    
-    // PID state variables
     private boolean alignmentActive = false;
     private ElapsedTime alignmentTimer = new ElapsedTime();
-    private ElapsedTime pidTimer = new ElapsedTime();
     private int targetTagId = 0;
-    private double lastError = 0.0;
-    private double integralSum = 0.0;
-    private double lastTime = 0.0;
     
     @Override
     public void runOpMode() {
@@ -473,12 +465,6 @@ public class TeleOpDECODE2 extends LinearOpMode {
         alignmentActive = true;
         alignmentTimer.reset();
         
-        // Reset PID state
-        pidTimer.reset();
-        lastError = 0.0;
-        integralSum = 0.0;
-        lastTime = 0.0;
-        
         telemetry.addData("✅ Alignment", "Started - Tag #%d", targetTag.id);
         telemetry.update();
     }
@@ -491,8 +477,6 @@ public class TeleOpDECODE2 extends LinearOpMode {
         if (alignmentTimer.seconds() > MAX_ALIGNMENT_TIME) {
             alignmentActive = false;
             setDrivePower(0, 0, 0, 0);
-            integralSum = 0.0;  // Reset PID state
-            lastError = 0.0;
             telemetry.addData("⏱️ Alignment", "Timeout - stopped");
             return;
         }
@@ -519,59 +503,25 @@ public class TeleOpDECODE2 extends LinearOpMode {
         double currentBearing = currentTag.ftcPose.bearing;
         double bearingDegrees = Math.toDegrees(currentBearing);
         
-        if (Math.abs(bearingDegrees) <= ALIGNMENT_TOLERANCE) {
+        if (Math.abs(currentBearing) <= Math.toRadians(ALIGNMENT_TOLERANCE)) {
             alignmentActive = false;
             setDrivePower(0, 0, 0, 0);
             telemetry.addData("✅ Alignment", "Complete!");
-            // Reset PID state
-            integralSum = 0.0;
-            lastError = 0.0;
             return;
         }
         
-        // PID Controller
-        double currentTime = pidTimer.seconds();
-        double deltaTime = currentTime - lastTime;
-        
-        // Prevent division by zero on first iteration
-        if (deltaTime < 0.001) {
-            deltaTime = 0.02;  // Assume 50Hz if too fast
-        }
-        
-        double error = bearingDegrees;  // Positive = turn right, Negative = turn left
-        
-        // Proportional term
-        double proportional = ALIGNMENT_KP * error;
-        
-        // Integral term (with anti-windup)
-        integralSum += error * deltaTime;
-        // Clamp integral to prevent excessive wind-up
-        double maxIntegral = 20.0;  // Limit integral contribution
-        integralSum = Math.max(-maxIntegral, Math.min(maxIntegral, integralSum));
-        double integral = ALIGNMENT_KI * integralSum;
-        
-        // Derivative term
-        double derivative = 0.0;
-        if (deltaTime > 0) {
-            derivative = ALIGNMENT_KD * (error - lastError) / deltaTime;
-        }
-        
-        // Calculate total turn power
-        double turnPower = proportional + integral + derivative;
+        // Proportional control: slow down as we approach target
+        double turnPower = bearingDegrees * ALIGNMENT_PROPORTIONAL_GAIN;
         
         // Clamp to min/max power
         double absPower = Math.abs(turnPower);
         if (absPower > ALIGNMENT_MAX_TURN_POWER) {
             turnPower = Math.signum(turnPower) * ALIGNMENT_MAX_TURN_POWER;
-        } else if (absPower < ALIGNMENT_MIN_TURN_POWER && absPower > 0.001) {
+        } else if (absPower < ALIGNMENT_MIN_TURN_POWER) {
             turnPower = Math.signum(turnPower) * ALIGNMENT_MIN_TURN_POWER;
         }
         
         setDrivePower(turnPower, -turnPower, turnPower, -turnPower);
-        
-        // Update state for next iteration
-        lastError = error;
-        lastTime = currentTime;
         
         telemetry.addData("🎯 Aligning", "Tag #%d Bearing: %.1f°", targetTagId, Math.toDegrees(currentBearing));
     }
