@@ -508,7 +508,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         }
         
         double turnPower = currentBearing > 0 ? ALIGNMENT_TURN_POWER : -ALIGNMENT_TURN_POWER;
-        setDrivePower(-turnPower, turnPower, -turnPower, turnPower);
+        setDrivePower(turnPower, -turnPower, turnPower, -turnPower);
         
         telemetry.addData("🎯 Aligning", "Tag #%d Bearing: %.1f°", targetTagId, Math.toDegrees(currentBearing));
     }
