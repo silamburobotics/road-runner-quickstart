@@ -76,7 +76,9 @@ public class TeleOpDECODE2 extends LinearOpMode {
     public static final double TURN_SPEED_MULTIPLIER = 0.6;
     
     // AprilTag alignment settings
-    public static final double ALIGNMENT_TURN_POWER = 0.3;
+    public static final double ALIGNMENT_MAX_TURN_POWER = 0.3;  // Maximum turn power
+    public static final double ALIGNMENT_MIN_TURN_POWER = 0.08;  // Minimum turn power (prevent stalling)
+    public static final double ALIGNMENT_PROPORTIONAL_GAIN = 0.015;  // Proportional gain for smooth approach
     public static final double ALIGNMENT_TOLERANCE = 0.5;
     public static final double MAX_ALIGNMENT_TIME = 3.0;
     private boolean alignmentActive = false;
@@ -499,6 +501,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         }
         
         double currentBearing = currentTag.ftcPose.bearing;
+        double bearingDegrees = Math.toDegrees(currentBearing);
         
         if (Math.abs(currentBearing) <= Math.toRadians(ALIGNMENT_TOLERANCE)) {
             alignmentActive = false;
@@ -507,7 +510,17 @@ public class TeleOpDECODE2 extends LinearOpMode {
             return;
         }
         
-        double turnPower = currentBearing > 0 ? ALIGNMENT_TURN_POWER : -ALIGNMENT_TURN_POWER;
+        // Proportional control: slow down as we approach target
+        double turnPower = bearingDegrees * ALIGNMENT_PROPORTIONAL_GAIN;
+        
+        // Clamp to min/max power
+        double absPower = Math.abs(turnPower);
+        if (absPower > ALIGNMENT_MAX_TURN_POWER) {
+            turnPower = Math.signum(turnPower) * ALIGNMENT_MAX_TURN_POWER;
+        } else if (absPower < ALIGNMENT_MIN_TURN_POWER) {
+            turnPower = Math.signum(turnPower) * ALIGNMENT_MIN_TURN_POWER;
+        }
+        
         setDrivePower(turnPower, -turnPower, turnPower, -turnPower);
         
         telemetry.addData("🎯 Aligning", "Tag #%d Bearing: %.1f°", targetTagId, Math.toDegrees(currentBearing));
