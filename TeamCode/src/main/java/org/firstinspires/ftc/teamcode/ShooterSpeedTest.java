@@ -25,15 +25,14 @@ public class ShooterSpeedTest extends LinearOpMode {
     
     // Tunable speed control parameters
     public static double TARGET_VELOCITY = 1300;  // Target shooter speed (ticks/sec)
-    public static double VELOCITY_GAIN = 0.0003;  // Proportional gain for velocity correction
-    public static double FEEDFORWARD_GAIN = 0.00065;  // Feedforward term for velocity
-    public static double MIN_POWER = 0.3;  // Minimum motor power
-    public static double MAX_POWER = 1.0;  // Maximum motor power
+    public static double VELOCITY_P = 1.0;  // Proportional coefficient for internal PID (reduced to prevent overshoot)
+    public static double VELOCITY_I = 0.1;  // Integral coefficient for internal PID (reduced to prevent wind-up)
+    public static double VELOCITY_D = 0.1;  // Derivative coefficient for internal PID (added to dampen oscillation)
+    public static double VELOCITY_F = 12.5;  // Feedforward coefficient for internal PID
     
     // Tunable timing parameters
     public static double FIRE_DURATION = 0.3;  // How long trigger stays in fire position
     public static double ADVANCE_WAIT = 0.2;  // Wait time between shots
-    public static int UPDATE_RATE_MS = 20;  // Speed update frequency (milliseconds)
     
     // Servo positions
     public static double TRIGGER_FIRE = 0.0;
@@ -50,7 +49,6 @@ public class ShooterSpeedTest extends LinearOpMode {
     private int testStep = 0;
     private ElapsedTime testTimer = new ElapsedTime();
     private ElapsedTime stabilizationTimer = new ElapsedTime();
-    private ElapsedTime updateTimer = new ElapsedTime();
     
     // Speed tracking
     private double[] speedHistory = new double[3];  // Track speed for each shot
@@ -67,7 +65,11 @@ public class ShooterSpeedTest extends LinearOpMode {
         
         shooter.setDirection(DcMotor.Direction.REVERSE);
         shooter.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        shooter.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+        // Set initial PID coefficients
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
         
         triggerServo.setPosition(TRIGGER_HOME);
         speedLight.setPosition(0.0);
@@ -90,8 +92,11 @@ public class ShooterSpeedTest extends LinearOpMode {
                 stopTest();
             }
             
-            // Update shooter speed control
-            if (testActive || shooter.getPower() > 0) {
+            // Update PID coefficients if changed via dashboard
+            shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
+            
+            // Maintain shooter speed using internal PID
+            if (testActive || shooter.getVelocity() > 0) {
                 maintainShooterSpeed();
             }
             
@@ -105,12 +110,13 @@ public class ShooterSpeedTest extends LinearOpMode {
         }
         
         // Cleanup
-        shooter.setPower(0);
+        shooter.setVelocity(0);
         shooterServo.setPower(0);
     }
     
     private void startTest() {
-        // Start shooter and servo
+        // Start shooter and servo with internal PID velocity control
+        shooter.setVelocity(TARGET_VELOCITY);
         shooterServo.setPower(SHOOTER_SERVO_POWER);
         
         // Reset test state
@@ -120,7 +126,6 @@ public class ShooterSpeedTest extends LinearOpMode {
         historyIndex = 0;
         testTimer.reset();
         stabilizationTimer.reset();
-        updateTimer.reset();
         
         // Clear history
         for (int i = 0; i < speedHistory.length; i++) {
@@ -130,7 +135,7 @@ public class ShooterSpeedTest extends LinearOpMode {
     
     private void stopTest() {
         testActive = false;
-        shooter.setPower(0);
+        shooter.setVelocity(0);
         shooterServo.setPower(0);
         triggerServo.setPosition(TRIGGER_HOME);
         speedLight.setPosition(0.0);
@@ -139,31 +144,17 @@ public class ShooterSpeedTest extends LinearOpMode {
     }
     
     private void maintainShooterSpeed() {
-        // Only update at specified rate
-        if (updateTimer.milliseconds() < UPDATE_RATE_MS) {
-            return;
-        }
-        updateTimer.reset();
+        // Motor controller handles PID internally - just maintain target velocity
+        shooter.setVelocity(TARGET_VELOCITY);
         
         // Get current velocity
         double currentVel = shooter.getVelocity();
         
         // Calculate error
-        double error = TARGET_VELOCITY - currentVel;
-        
-        // Calculate correction using proportional + feedforward
-        double proportionalTerm = error * VELOCITY_GAIN;
-        double feedforwardTerm = TARGET_VELOCITY * FEEDFORWARD_GAIN;
-        double motorPower = proportionalTerm + feedforwardTerm;
-        
-        // Clamp power
-        motorPower = Math.max(MIN_POWER, Math.min(MAX_POWER, motorPower));
-        
-        // Apply power
-        shooter.setPower(motorPower);
+        double error = Math.abs(TARGET_VELOCITY - currentVel);
         
         // Check stability
-        boolean withinTolerance = Math.abs(error) < SPEED_TOLERANCE;
+        boolean withinTolerance = error < SPEED_TOLERANCE;
         if (withinTolerance && stabilizationTimer.seconds() >= STABILIZATION_TIME) {
             isStable = true;
             speedLight.setPosition(0.5);  // Green
@@ -250,10 +241,11 @@ public class ShooterSpeedTest extends LinearOpMode {
         telemetry.addData("Error", "%.0f ticks/sec", TARGET_VELOCITY - shooter.getVelocity());
         telemetry.addData("Motor Power", "%.3f", shooter.getPower());
         
-        telemetry.addData("\n=== TUNING ===", "");
-        telemetry.addData("Velocity Gain", "%.6f", VELOCITY_GAIN);
-        telemetry.addData("Feedforward", "%.6f", FEEDFORWARD_GAIN);
-        telemetry.addData("Update Rate", "%d ms", UPDATE_RATE_MS);
+        telemetry.addData("\n=== PID TUNING ===", "");
+        telemetry.addData("P (Proportional)", "%.2f", VELOCITY_P);
+        telemetry.addData("I (Integral)", "%.2f", VELOCITY_I);
+        telemetry.addData("D (Derivative)", "%.2f", VELOCITY_D);
+        telemetry.addData("F (Feedforward)", "%.2f", VELOCITY_F);
         
         if (shotsFired > 0) {
             telemetry.addData("\n=== RESULTS ===", "");
