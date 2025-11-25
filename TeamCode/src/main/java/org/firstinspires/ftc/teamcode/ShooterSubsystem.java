@@ -42,15 +42,15 @@ public class ShooterSubsystem {
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
-    public static double VELOCITY_P = 1.2;  // Proportional coefficient
-    public static double VELOCITY_I = 0.08;  // Integral coefficient
+    public static double VELOCITY_P = 2.0;  // Proportional coefficient
+    public static double VELOCITY_I = 0.1;  // Integral coefficient
     public static double VELOCITY_D = 0.15;  // Derivative coefficient
-    public static double VELOCITY_F = 11.8;  // Feedforward coefficient
+    public static double VELOCITY_F = 10.0;  // Feedforward coefficient
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
-    public static final double TRIGGER_FIRE_DURATION = 0.3;  // Fire duration in seconds (reduced from 0.5)
+    public static final double TRIGGER_FIRE_DURATION = 0.7;  // Fire duration in seconds
     public static final double INDEXER_ADVANCE_WAIT = 0.2;   // Wait time for indexer to advance
     
     // Speed light control settings
@@ -334,8 +334,8 @@ public class ShooterSubsystem {
         double elapsedTime = triggerTimer.seconds();
         
         switch (triggerSequenceStep) {
-            case 1: // First shot - fire position
-                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+            case 1: // First shot - fire position. For first shot we dont need to wait longer
+                if (elapsedTime >= 0.3) {
                     triggerServo.setPosition(TRIGGER_HOME);
                     shotsFired = 1;
                     triggerSequenceStep = 2;
