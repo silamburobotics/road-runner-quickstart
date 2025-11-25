@@ -105,8 +105,8 @@ public class AprilTagAlignTest extends LinearOpMode {
     private void initializeAprilTag() {
         aprilTag = new AprilTagProcessor.Builder()
                 .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
-                .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
-                .setLensIntrinsics(1156.544, 1156.544, 640.0, 360.0)
+                .setOutputUnits(DistanceUnit.INCH, AngleUnit.RADIANS)
+                .setLensIntrinsics(578.272, 578.272, 402.145, 221.506)  // OV9281 Arducam 1280x720
                 .build();
 
         try {
