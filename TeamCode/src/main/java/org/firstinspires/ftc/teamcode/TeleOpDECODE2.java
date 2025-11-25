@@ -191,8 +191,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
     private void initializeAprilTag() {
         aprilTag = new AprilTagProcessor.Builder()
                 .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
-                .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
-                .setLensIntrinsics(1156.544, 1156.544, 640.0, 360.0)
+                .setOutputUnits(DistanceUnit.INCH, AngleUnit.RADIANS)  // ftcPose is always in radians
                 .build();
 
         try {
