@@ -466,6 +466,7 @@ public class ShooterSubsystem {
     public int getShotsFired() { return shotsFired; }
     public int getIndexorCurrentPosition() { return indexor.getCurrentPosition(); }
     public double getShooterCurrentVelocity() { return shooter.getVelocity(); }
+    public Servo getTriggerServo() { return triggerServo; }
     
     // Conveyor control
     public void startConveyor() {
