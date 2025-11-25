@@ -47,8 +47,9 @@ public class TeleOpDECODE2 extends LinearOpMode {
     private boolean previousB1 = false;  // Gamepad1 B button (shooter speed 1300)
     private boolean previousY1 = false;  // Gamepad1 Y button (shooter speed 1600)
     private boolean previousA2 = false;  // Gamepad2 A button (AprilTag alignment)
-    private boolean previousB2 = false;  // Gamepad2 B button (trigger)
+    private boolean previousB2 = false;  // Gamepad2 B button
     private boolean previousX2 = false;  // Gamepad2 X button (advance indexer)
+    private boolean previousY2 = false;  // Gamepad2 Y button (trigger)
     private boolean previousLeftBumper2 = false;  // Gamepad2 left bumper (indexer +10 degrees)
     private boolean previousLeftTrigger2 = false;  // Gamepad2 left trigger (indexer -10 degrees)
     
@@ -116,7 +117,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         telemetry.addData("GAMEPAD2 CONTROLS:", "");
         telemetry.addData("A", "Align with AprilTag");
         telemetry.addData("X", "Advance Indexer");
-        telemetry.addData("B", "Trigger Function (Double-Fire)");
+        telemetry.addData("Y", "Trigger Function (3-Shot)");
         telemetry.addData("Left Stick -Y", "Outtake Function");
         telemetry.addData("Left Stick +Y", "Intake Function");
         telemetry.addData("Left Bumper", "Indexer +10°");
@@ -274,7 +275,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         
         boolean currentA2 = gamepad2.a;
         boolean currentX2 = gamepad2.x;
-        boolean currentB2 = gamepad2.b;
+        boolean currentY2 = gamepad2.y;
         boolean currentLeftBumper2 = gamepad2.left_bumper;
         boolean currentLeftTrigger2 = gamepad2.left_trigger > 0.5;
         
@@ -286,7 +287,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
             shooterSubsystem.advanceIndexer();
         }
         
-        if (currentB2 && !previousB2) {
+        if (currentY2 && !previousY2) {
             if (!shooterSubsystem.isShooterRunning()) {
                 telemetry.addData("⚠️ Trigger", "Shooter not running - use gamepad1 B/Y first");
                 telemetry.update();
@@ -305,7 +306,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         
         previousA2 = currentA2;
         previousX2 = currentX2;
-        previousB2 = currentB2;
+        previousY2 = currentY2;
         previousLeftBumper2 = currentLeftBumper2;
         previousLeftTrigger2 = currentLeftTrigger2;
     }
