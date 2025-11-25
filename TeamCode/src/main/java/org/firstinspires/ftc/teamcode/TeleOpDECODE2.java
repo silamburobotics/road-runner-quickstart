@@ -192,7 +192,7 @@ public class TeleOpDECODE2 extends LinearOpMode {
         aprilTag = new AprilTagProcessor.Builder()
                 .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
                 .setOutputUnits(DistanceUnit.INCH, AngleUnit.RADIANS)
-                .setLensIntrinsics(578.272, 578.272, 402.145, 221.506)  // OV9281 Arducam 1280x720
+                .setLensIntrinsics(902.577, 902.577, 612.676, 364.762)  // OV9281 Arducam 1280x720
                 .build();
 
         try {
