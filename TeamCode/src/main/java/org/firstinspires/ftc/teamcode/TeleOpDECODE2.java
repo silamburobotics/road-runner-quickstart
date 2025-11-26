@@ -543,10 +543,12 @@ public class TeleOpDECODE2 extends LinearOpMode {
                 
                 // Show details for each detected tag
                 for (AprilTagDetection detection : detections) {
-                    telemetry.addData("Tag ID", detection.id);
-                    telemetry.addData("  Range", "%.2f inches", detection.ftcPose.range);
-                    telemetry.addData("  Bearing", "%.1f°", Math.toDegrees(detection.ftcPose.bearing));
-                    telemetry.addData("  Yaw", "%.1f°", Math.toDegrees(detection.ftcPose.yaw));
+                    if (detection.ftcPose != null) {
+                        telemetry.addData("Tag ID", detection.id);
+                        telemetry.addData("  Range", "%.2f inches", detection.ftcPose.range);
+                        telemetry.addData("  Bearing", "%.1f°", Math.toDegrees(detection.ftcPose.bearing));
+                        telemetry.addData("  Yaw", "%.1f°", Math.toDegrees(detection.ftcPose.yaw));
+                    }
                 }
             }
         }
