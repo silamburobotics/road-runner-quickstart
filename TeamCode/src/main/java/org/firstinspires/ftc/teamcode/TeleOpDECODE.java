@@ -133,7 +133,8 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final int INDEXOR_STUCK_THRESHOLD = 10;    // Minimum movement required
     
     // AprilTag settings
-    public static final int TARGET_TAG_ID = 20;
+    public static final int TARGET_TAG_ID_PRIMARY = 20;
+    public static final int TARGET_TAG_ID_SECONDARY = 24;
     public static final double OPTIMAL_SHOOTING_DISTANCE = 24.0; // inches
     
     // Mecanum drive settings
@@ -144,8 +145,9 @@ public class TeleOpDECODE extends LinearOpMode {
     // AprilTag alignment settings
     public static final double ALIGNMENT_TURN_POWER = 0.3;    // Power for alignment turns
     public static final double ALIGNMENT_TOLERANCE = 2.0;      // Degrees tolerance for "aligned"
-    public static final double MAX_ALIGNMENT_TIME = 3.0;       // Maximum time for alignment attempt
+    public static final double ALIGNMENT_TIMEOUT = 1.0;        // Maximum time for alignment attempt (seconds)
     private boolean alignmentActive = false;
+    private int targetTagId = 0;
     private ElapsedTime alignmentTimer = new ElapsedTime();
     private double targetBearing = 0.0;
     
@@ -289,8 +291,8 @@ public class TeleOpDECODE extends LinearOpMode {
         // Create the AprilTag processor
         aprilTag = new AprilTagProcessor.Builder()
                 .setTagFamily(AprilTagProcessor.TagFamily.TAG_36h11)
-                .setOutputUnits(DistanceUnit.INCH, AngleUnit.DEGREES)
-                .setLensIntrinsics(1156.544, 1156.544, 640.0, 360.0)
+                .setOutputUnits(DistanceUnit.INCH, AngleUnit.RADIANS)
+                .setLensIntrinsics(902.577, 902.577, 612.676, 364.762)  // OV9281 Arducam 1280x720
                 .build();
 
         try {
@@ -1029,7 +1031,7 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Look for AprilTag #20
+        // Look for AprilTag #20 or #24
         List<AprilTagDetection> detections = aprilTag.getDetections();
         AprilTagDetection targetTag = null;
         
@@ -1037,25 +1039,28 @@ public class TeleOpDECODE extends LinearOpMode {
         
         for (AprilTagDetection detection : detections) {
             telemetry.addData("Tag Found", "ID: %d", detection.id);
-            if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
+            if ((detection.id == TARGET_TAG_ID_PRIMARY || detection.id == TARGET_TAG_ID_SECONDARY) 
+                && detection.ftcPose != null) {
                 targetTag = detection;
                 break;
             }
         }
         
         if (targetTag == null) {
-            telemetry.addData("❌ Alignment", "AprilTag #%d not found", TARGET_TAG_ID);
+            telemetry.addData("❌ Alignment", "AprilTag #%d or #%d not found", TARGET_TAG_ID_PRIMARY, TARGET_TAG_ID_SECONDARY);
             telemetry.addData("Camera State", "%s", visionPortal.getCameraState().toString());
             telemetry.update();
             return;
         }
         
         // Start alignment
+        targetTagId = targetTag.id;
         targetBearing = targetTag.ftcPose.bearing;
         alignmentActive = true;
         alignmentTimer.reset();
         
-        telemetry.addData("🎯 Alignment STARTED", "Target bearing: %.1f°", targetBearing);
+        double bearingDegrees = Math.toDegrees(targetBearing);
+        telemetry.addData("🎯 Alignment STARTED", "Tag #%d - Target bearing: %.1f°", targetTag.id, bearingDegrees);
         telemetry.addData("📏 Distance", "%.1f inches", targetTag.ftcPose.range);
         telemetry.update();
     }
@@ -1070,7 +1075,7 @@ public class TeleOpDECODE extends LinearOpMode {
         }
         
         // Check timeout
-        if (alignmentTimer.seconds() > MAX_ALIGNMENT_TIME) {
+        if (alignmentTimer.seconds() > ALIGNMENT_TIMEOUT) {
             stopAlignment("Timeout reached");
             return;
         }
@@ -1092,7 +1097,7 @@ public class TeleOpDECODE extends LinearOpMode {
         AprilTagDetection targetTag = null;
         
         for (AprilTagDetection detection : detections) {
-            if (detection.id == TARGET_TAG_ID && detection.ftcPose != null) {
+            if (detection.id == targetTagId && detection.ftcPose != null) {
                 targetTag = detection;
                 break;
             }
@@ -1103,8 +1108,8 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Calculate bearing error
-        double currentBearing = targetTag.ftcPose.bearing;
+        // Calculate bearing error (convert from radians to degrees)
+        double currentBearing = Math.toDegrees(targetTag.ftcPose.bearing);
         double bearingError = currentBearing;
         
         // Check if aligned (within tolerance)
@@ -1132,7 +1137,7 @@ public class TeleOpDECODE extends LinearOpMode {
         telemetry.addData("🎯 ALIGNING", "Bearing error: %.1f°", bearingError);
         telemetry.addData("🔄 Turn Power", "%.2f", turnPower);
         telemetry.addData("📏 Distance", "%.1f inches", targetTag.ftcPose.range);
-        telemetry.addData("⏱️ Time", "%.1f / %.1f seconds", alignmentTimer.seconds(), MAX_ALIGNMENT_TIME);
+        telemetry.addData("⏱️ Time", "%.1f / %.1f seconds", alignmentTimer.seconds(), ALIGNMENT_TIMEOUT);
         telemetry.update();
     }
     
