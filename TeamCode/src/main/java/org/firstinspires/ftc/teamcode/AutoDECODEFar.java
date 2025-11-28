@@ -125,6 +125,7 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(START_POSE)
+                .setTangent(0)
                 .lineToXSplineHeading(START_POSE.position.x + 30.0, Math.toRadians(-130))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start intake system during rearward movement
