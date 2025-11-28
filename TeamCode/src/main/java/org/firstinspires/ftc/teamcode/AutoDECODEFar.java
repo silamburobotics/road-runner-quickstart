@@ -96,7 +96,7 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
         telemetry.addData("1.", "Trajectory 1 - Move to shooting position");
         telemetry.addData("2.", "Shooter - Fire 3 shots");
-        telemetry.addData("3.", "Trajectory 2 - Move sideways 40 inches");
+        telemetry.addData("3.", "Trajectory 2 - 30\" fwd + 130° turn + 10\" rear");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔵 Blue indicator");
@@ -123,13 +123,14 @@ public class AutoDECODEFar extends LinearOpMode {
                 .waitSeconds(0.1)  // Placeholder - replace with actual movement if needed
                 .build();
         
-        // Trajectory 2: Move sideways 40 inches after shooting
+        // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward
         trajectory2 = drive.actionBuilder(START_POSE)
-                .lineToX(START_POSE.position.x + FORWARD_DISTANCE)
+                .lineToXLinearHeading(START_POSE.position.x + 30.0, Math.toRadians(-130))
+                .lineToY(START_POSE.position.y - 10.0)
                 .build();
         
         telemetry.addData("✅ Trajectory 1", "Built (ready position)");
-        telemetry.addData("✅ Trajectory 2", "Built (move %.1f inches)", FORWARD_DISTANCE);
+        telemetry.addData("✅ Trajectory 2", "Built (30\" fwd + 130° turn + 10\" rear)");
         telemetry.update();
     }
     
@@ -166,14 +167,46 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("✅ Shooter Sequence", "Complete - 3 shots fired");
         telemetry.update();
         
-        // Step 3: Execute Trajectory 2 (move sideways)
+        // Step 3: Execute Trajectory 2 (move forward with turn, then rearward with intake)
         telemetry.addData("🚀 STEP 3", "Executing Trajectory 2...");
         telemetry.update();
-        Actions.runBlocking(trajectory2);
+        
+        // Start trajectory 2 - forward movement with turn
+        Actions.runBlocking(
+            drive.actionBuilder(START_POSE)
+                .lineToXLinearHeading(START_POSE.position.x + 30.0, Math.toRadians(-130))
+                .build()
+        );
+        
+        // Start intake, conveyor, and indexor for rearward movement
+        intake.setPower(INTAKE_POWER);
+        conveyor.setPower(CONVEYOR_POWER);
+        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        indexor.setPower(AUTO_INDEXOR_POWER);
+        
+        telemetry.addData("✅ Intake", "Running at %.1f power", INTAKE_POWER);
+        telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
+        telemetry.addData("✅ Indexor", "Running at %.1f power", AUTO_INDEXOR_POWER);
+        telemetry.update();
+        
+        // Complete rearward movement with intake running
+        Actions.runBlocking(
+            drive.actionBuilder(new Pose2d(START_POSE.position.x + 30.0, START_POSE.position.y, Math.toRadians(-130)))
+                .lineToY(START_POSE.position.y - 10.0)
+                .build()
+        );
+        
+        // Stop intake system
+        intake.setPower(0);
+        conveyor.setPower(0);
+        indexor.setPower(0);
+        
+        telemetry.addData("✅ Intake System", "Stopped");
+        telemetry.update();
         
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
-        telemetry.addData("📍 Final Position", "40\" sideways from start");
+        telemetry.addData("📍 Final Position", "30\" fwd + 130° turn + 10\" rear");
         telemetry.addData("🎯 Shots Fired", "3 shots");
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
