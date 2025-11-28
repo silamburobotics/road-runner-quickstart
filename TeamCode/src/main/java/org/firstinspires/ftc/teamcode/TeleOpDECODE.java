@@ -106,7 +106,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Shooter velocity settings
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1600;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
@@ -114,7 +114,6 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
-    public static final double TRIGGER_INTERMITTENT = 0.30;  // Intermittent position (65.7 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     public static final double TRIGGER_FIRE_DURATION = 0.5;  // Fire duration in seconds
     
@@ -798,39 +797,17 @@ public class TeleOpDECODE extends LinearOpMode {
         switch (triggerSequenceStep) {
             case 1: // First fire position
                 if (elapsedTime >= TRIGGER_FIRE_DURATION) {
-                    // Move to intermittent position
-                    triggerServo.setPosition(TRIGGER_INTERMITTENT);
+                    // Return to home position
+                    triggerServo.setPosition(TRIGGER_HOME);
                     triggerSequenceStep = 2;
                     firstFireComplete = true;
-                    triggerTimer.reset();
                     
-                    telemetry.addData("🔄 Trigger", "Moving to INTERMITTENT position");
+                    telemetry.addData("🏠 Trigger", "Returning to HOME position");
                     telemetry.addData("First Fire", "COMPLETE");
                 }
                 break;
                 
-            case 2: // Intermittent position (brief pause)
-                if (elapsedTime >= 0.2) {  // 0.2 second pause at intermittent
-                    // Move to second fire position
-                    triggerServo.setPosition(TRIGGER_FIRE);
-                    triggerSequenceStep = 3;
-                    triggerTimer.reset();
-                    
-                    telemetry.addData("🎯 Trigger", "SECOND FIRE position");
-                }
-                break;
-                
-            case 3: // Second fire position
-                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
-                    // Return to home position
-                    triggerServo.setPosition(TRIGGER_HOME);
-                    triggerSequenceStep = 4;
-                    
-                    telemetry.addData("🏠 Trigger", "Returning to HOME position");
-                }
-                break;
-                
-            case 4: // Sequence complete - advance indexer
+            case 2: // Sequence complete - advance indexer
                 triggerSequenceActive = false;
                 triggerSequenceStep = 0;
                 firstFireComplete = false;
@@ -981,15 +958,9 @@ public class TeleOpDECODE extends LinearOpMode {
             
             switch (triggerSequenceStep) {
                 case 1:
-                    stepDescription = String.format("FIRST FIRE (%.1fs left)", timeLeft);
+                    stepDescription = String.format("FIRE (%.1fs left)", timeLeft);
                     break;
                 case 2:
-                    stepDescription = String.format("INTERMITTENT (%.1fs)", triggerTimer.seconds());
-                    break;
-                case 3:
-                    stepDescription = String.format("SECOND FIRE (%.1fs left)", timeLeft);
-                    break;
-                case 4:
                     stepDescription = "Returning to HOME";
                     break;
                 default:
@@ -1003,8 +974,6 @@ public class TeleOpDECODE extends LinearOpMode {
             String positionName;
             if (Math.abs(currentTriggerPos - TRIGGER_FIRE) < 0.05) {
                 positionName = "FIRE";
-            } else if (Math.abs(currentTriggerPos - TRIGGER_INTERMITTENT) < 0.05) {
-                positionName = "INTERMITTENT";
             } else {
                 positionName = "HOME";
             }
