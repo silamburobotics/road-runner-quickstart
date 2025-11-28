@@ -40,7 +40,7 @@ public class AutoDECODEFar extends LinearOpMode {
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
-    public static final double AUTO_INDEXOR_POWER = 0.1;      // Power for automatic indexor movement
+    public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -54,7 +54,7 @@ public class AutoDECODEFar extends LinearOpMode {
     
     // Speed stabilization settings
     public static final double SHOOTER_SPEED_TOLERANCE = 25;    // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 1.5; // Seconds to wait for speed stabilization between shots
+    public static final double SHOOTER_STABILIZATION_TIME = 0.5; // Seconds to wait for speed stabilization between shots
     public static final double SHOOTER_VELOCITY_CORRECTION_FACTOR = 1.02; // Slight overcorrection for consistency
     
     // Speed light control settings (using servo positions for LED control)
@@ -69,7 +69,7 @@ public class AutoDECODEFar extends LinearOpMode {
     
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double WAIT_BETWEEN_SHOTS = 0.5;      // Seconds to wait between shots (stabilization)
+    public static final double WAIT_BETWEEN_SHOTS = 0.3;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
@@ -111,20 +111,15 @@ public class AutoDECODEFar extends LinearOpMode {
         // Step 1: Start shooter and fire 3 shots
         startShooterSystem();
         waitForShooterSpeed();
-
-        sleep((long)(WAIT_BETWEEN_SHOTS * 1000));
         
         fireShot(1);
         moveIndexorToNextPosition();
-        waitForShooterSpeed();
         
         fireShot(2);
         moveIndexorToNextPosition();
-        waitForShooterSpeed();
         
         fireShot(3);
         moveIndexorToNextPosition();
-        waitForShooterSpeed();
         
         
         stopShooterSystem();
