@@ -79,8 +79,10 @@ public class TeleOpDECODE2 extends LinearOpMode {
     // AprilTag alignment settings
     public static final double ALIGNMENT_KP = 0.015;  // Proportional gain
     public static final double ALIGNMENT_TOLERANCE = 1.0;  // Degrees
+    public static final double ALIGNMENT_TIMEOUT = 1.0;  // Max alignment time in seconds
     private boolean alignmentActive = false;
     private int targetTagId = 0;
+    private ElapsedTime alignmentTimer = new ElapsedTime();
     
     @Override
     public void runOpMode() {
@@ -448,11 +450,19 @@ public class TeleOpDECODE2 extends LinearOpMode {
         if (targetTag != null) {
             targetTagId = targetTag.id;
             alignmentActive = true;
+            alignmentTimer.reset();
         }
     }
     
     private void handleAprilTagAlignment() {
         if (!alignmentActive) {
+            return;
+        }
+        
+        // Check timeout
+        if (alignmentTimer.seconds() > ALIGNMENT_TIMEOUT) {
+            alignmentActive = false;
+            setDrivePower(0, 0, 0, 0);
             return;
         }
         
