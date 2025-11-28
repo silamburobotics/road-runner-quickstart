@@ -64,14 +64,12 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     public static final double LIGHT_BLUE_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
-     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
-    public static final double TRIGGER_INTERMITTENT = 0.30;  // Intermittent position (65.7 degrees)
+    public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
     public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double TRIGGER_INTERMITTENT_PAUSE = 0.2;  // Pause at intermittent position
-    public static final double WAIT_BETWEEN_SHOTS = 1.0;      // Seconds to wait between shots (stabilization)
+    public static final double WAIT_BETWEEN_SHOTS = 0.5;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     
@@ -134,7 +132,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         startShooterSystem();
         waitForShooterSpeed();
 
-        sleep((long)(WAIT_BETWEEN_SHOTS * 3000));
+        sleep((long)(WAIT_BETWEEN_SHOTS * 1000));
         
         fireShot(1);
         moveIndexorToNextPosition();
@@ -293,13 +291,13 @@ public class AutoDECODEBlueNear extends LinearOpMode {
             sleep(200); // Brief stabilization
         }
         
-        // FIRST FIRE - Move trigger to fire position
+        // Move trigger to fire position
         triggerServo.setPosition(TRIGGER_FIRE);
         
         ElapsedTime fireTimer = new ElapsedTime();
         fireTimer.reset();
         
-        // Wait for first fire duration with velocity monitoring
+        // Wait for fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
             // Continuously reapply shooter velocity to maintain consistent speed
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
@@ -308,7 +306,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
             
-            telemetry.addData("🎯 Shot", "%d of 3 - FIRST FIRE", shotNumber);
+            telemetry.addData("🎯 Shot", "%d of 3", shotNumber);
             telemetry.addData("💥 Trigger", "FIRE position");
             telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
             telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
@@ -317,21 +315,6 @@ public class AutoDECODEBlueNear extends LinearOpMode {
             telemetry.update();
             sleep(50);
         }
-        
-        // INTERMITTENT POSITION - Move to intermediate position
-        triggerServo.setPosition(TRIGGER_INTERMITTENT);
-        telemetry.addData("🔄 Trigger", "INTERMITTENT position");
-        telemetry.update();
-        sleep((long)(TRIGGER_INTERMITTENT_PAUSE * 1000));
-        
-        // SECOND FIRE - Move trigger to fire position again
-        triggerServo.setPosition(TRIGGER_FIRE);
-        fireTimer.reset();
-        
-        // Wait for second fire duration with velocity monitoring
-        while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
-            // Continuously reapply shooter velocity to maintain consistent speed
-            shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
             
             double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
