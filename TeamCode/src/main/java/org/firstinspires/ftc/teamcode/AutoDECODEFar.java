@@ -123,10 +123,25 @@ public class AutoDECODEFar extends LinearOpMode {
                 .waitSeconds(0.1)  // Placeholder - replace with actual movement if needed
                 .build();
         
-        // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward
+        // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(START_POSE)
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 30.0, START_POSE.position.y), Math.toRadians(-130))
+                .lineToXSplineHeading(new Vector2d(START_POSE.position.x + 30.0, START_POSE.position.y), Math.toRadians(-130))
+                .afterTime(0, (telemetryPacket) -> {
+                    // Start intake system during rearward movement
+                    intake.setPower(INTAKE_POWER);
+                    conveyor.setPower(CONVEYOR_POWER);
+                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    indexor.setPower(AUTO_INDEXOR_POWER);
+                    return false;
+                })
                 .lineToY(START_POSE.position.y - 10.0)
+                .stopAndAdd((telemetryPacket) -> {
+                    // Stop intake system after rearward movement
+                    intake.setPower(0);
+                    conveyor.setPower(0);
+                    indexor.setPower(0);
+                    return false;
+                })
                 .build();
         
         telemetry.addData("✅ Trajectory 1", "Built (ready position)");
@@ -171,37 +186,10 @@ public class AutoDECODEFar extends LinearOpMode {
         telemetry.addData("🚀 STEP 3", "Executing Trajectory 2...");
         telemetry.update();
         
-        // Start trajectory 2 - forward movement with turn
-        Actions.runBlocking(
-            drive.actionBuilder(START_POSE)
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 30.0, START_POSE.position.y), Math.toRadians(-130))
-                .build()
-        );
+        // Execute first part of trajectory 2 (forward movement with turn)
+        Actions.runBlocking(trajectory2);
         
-        // Start intake, conveyor, and indexor for rearward movement
-        intake.setPower(INTAKE_POWER);
-        conveyor.setPower(CONVEYOR_POWER);
-        indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        indexor.setPower(AUTO_INDEXOR_POWER);
-        
-        telemetry.addData("✅ Intake", "Running at %.1f power", INTAKE_POWER);
-        telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
-        telemetry.addData("✅ Indexor", "Running at %.1f power", AUTO_INDEXOR_POWER);
-        telemetry.update();
-        
-        // Complete rearward movement with intake running
-        Actions.runBlocking(
-            drive.actionBuilder(new Pose2d(START_POSE.position.x + 30.0, START_POSE.position.y, Math.toRadians(-130)))
-                .lineToY(START_POSE.position.y - 10.0)
-                .build()
-        );
-        
-        // Stop intake system
-        intake.setPower(0);
-        conveyor.setPower(0);
-        indexor.setPower(0);
-        
-        telemetry.addData("✅ Intake System", "Stopped");
+        telemetry.addData("✅ Trajectory 2", "Complete");
         telemetry.update();
         
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
