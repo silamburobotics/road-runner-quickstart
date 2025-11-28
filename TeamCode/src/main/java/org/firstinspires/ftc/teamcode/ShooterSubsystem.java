@@ -42,7 +42,7 @@ public class ShooterSubsystem {
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
-    public static double VELOCITY_P = 2.0;  // Proportional coefficient
+    public static double VELOCITY_P = 3.5;  // Proportional coefficient (increased for faster response on restart)
     public static double VELOCITY_I = 0.1;  // Integral coefficient
     public static double VELOCITY_D = 0.15;  // Derivative coefficient
     public static double VELOCITY_F = 10.0;  // Feedforward coefficient
