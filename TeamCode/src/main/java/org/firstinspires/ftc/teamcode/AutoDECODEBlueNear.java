@@ -310,20 +310,6 @@ public class AutoDECODEBlueNear extends LinearOpMode {
             telemetry.update();
             sleep(50);
         }
-            
-            double currentVelocity = shooter.getVelocity();
-            double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
-            double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
-            
-            telemetry.addData("🎯 Shot", "%d of 3 - SECOND FIRE", shotNumber);
-            telemetry.addData("💥 Trigger", "FIRE position (2nd)");
-            telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
-            telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
-            telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
-            
-            telemetry.update();
-            sleep(50);
-        }
         
         // Return trigger to home position
         triggerServo.setPosition(TRIGGER_HOME);

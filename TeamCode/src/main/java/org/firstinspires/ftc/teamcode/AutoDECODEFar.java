@@ -32,6 +32,10 @@ public class AutoDECODEFar extends LinearOpMode {
     // Declare mecanum drive
     private MecanumDrive drive;
     
+    // Pre-built actions
+    private Action trajectory1;
+    private Action trajectory2;
+    
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
     private static final String POSITION = "BACK";
@@ -81,20 +85,25 @@ public class AutoDECODEFar extends LinearOpMode {
         // Initialize motors and Road Runner drive
         initializeMotors();
         
+        // Build all trajectory actions during initialization
+        buildTrajectoryActions();
+        
         // Display autonomous sequence
         telemetry.addData("Status", "Auto Far - Road Runner Initialized");
         telemetry.addData("Alliance", "🔵 BLUE");
         telemetry.addData("Position", "FAR");
         telemetry.addData("Start Pose", "X: %.1f\", Y: %.1f\", H: %.1f°", START_POSE.position.x, START_POSE.position.y, Math.toDegrees(START_POSE.heading.toDouble()));
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
-        telemetry.addData("1.", "Start shooter + fire 3 shots");
-        telemetry.addData("2.", "Move sideways 40 inches using Road Runner (orthogonal to Y axis)");
+        telemetry.addData("1.", "Trajectory 1 - Move to shooting position");
+        telemetry.addData("2.", "Shooter - Fire 3 shots");
+        telemetry.addData("3.", "Trajectory 2 - Move sideways 40 inches");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔵 Blue indicator");
-        telemetry.addData("Total Time", "~15-20 seconds");
+        telemetry.addData("Total Time", "~8-12 seconds");
         telemetry.addData("", "");
         telemetry.addData("Drive System", "Road Runner with GoBilda Pinpoint");
+        telemetry.addData("✅ Actions Built", "Ready to execute");
         telemetry.update();
         
         waitForStart();
@@ -104,11 +113,42 @@ public class AutoDECODEFar extends LinearOpMode {
         }
     }
     
+    private void buildTrajectoryActions() {
+        telemetry.addData("🏗️ Building Actions", "Creating trajectory paths...");
+        telemetry.update();
+        
+        // Trajectory 1: Initial movement (if needed - currently staying at start)
+        // You can modify this to move to a specific shooting position
+        trajectory1 = drive.actionBuilder(START_POSE)
+                .waitSeconds(0.1)  // Placeholder - replace with actual movement if needed
+                .build();
+        
+        // Trajectory 2: Move sideways 40 inches after shooting
+        trajectory2 = drive.actionBuilder(START_POSE)
+                .lineToX(START_POSE.position.x + FORWARD_DISTANCE)
+                .build();
+        
+        telemetry.addData("✅ Trajectory 1", "Built (ready position)");
+        telemetry.addData("✅ Trajectory 2", "Built (move %.1f inches)", FORWARD_DISTANCE);
+        telemetry.update();
+    }
+    
     private void executeAutonomousSequence() {
         telemetry.addData("🤖 AUTONOMOUS", "Starting Blue Back Road Runner sequence...");
         telemetry.update();
         
-        // Step 1: Start shooter and fire 3 shots
+        // Step 1: Execute Trajectory 1 (move to shooting position)
+        telemetry.addData("🚀 STEP 1", "Executing Trajectory 1...");
+        telemetry.update();
+        Actions.runBlocking(trajectory1);
+        
+        telemetry.addData("✅ Trajectory 1", "Complete");
+        telemetry.update();
+        
+        // Step 2: Shooter sequence - Fire 3 shots
+        telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
+        telemetry.update();
+        
         startShooterSystem();
         waitForShooterSpeed();
         
@@ -121,18 +161,15 @@ public class AutoDECODEFar extends LinearOpMode {
         fireShot(3);
         moveIndexorToNextPosition();
         
-        
         stopShooterSystem();
         
-        // Step 2: Move sideways 40 inches (orthogonal to Y axis)
-        telemetry.addData("🚀 STEP 2", "Moving sideways %.1f inches...", FORWARD_DISTANCE);
+        telemetry.addData("✅ Shooter Sequence", "Complete - 3 shots fired");
         telemetry.update();
         
-        Action moveForward = drive.actionBuilder(START_POSE)
-                .lineToX(START_POSE.position.x + FORWARD_DISTANCE)  // Move sideways 40 inches (orthogonal to Y axis)
-                .build();
-        
-        Actions.runBlocking(moveForward);
+        // Step 3: Execute Trajectory 2 (move sideways)
+        telemetry.addData("🚀 STEP 3", "Executing Trajectory 2...");
+        telemetry.update();
+        Actions.runBlocking(trajectory2);
         
         telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
