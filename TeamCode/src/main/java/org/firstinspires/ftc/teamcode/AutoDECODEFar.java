@@ -125,7 +125,7 @@ public class AutoDECODEFar extends LinearOpMode {
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward
         trajectory2 = drive.actionBuilder(START_POSE)
-                .lineToXLinearHeading(START_POSE.position.x + 30.0, Math.toRadians(-130))
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 30.0, START_POSE.position.y), Math.toRadians(-130))
                 .lineToY(START_POSE.position.y - 10.0)
                 .build();
         
@@ -174,7 +174,7 @@ public class AutoDECODEFar extends LinearOpMode {
         // Start trajectory 2 - forward movement with turn
         Actions.runBlocking(
             drive.actionBuilder(START_POSE)
-                .lineToXLinearHeading(START_POSE.position.x + 30.0, Math.toRadians(-130))
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 30.0, START_POSE.position.y), Math.toRadians(-130))
                 .build()
         );
         
