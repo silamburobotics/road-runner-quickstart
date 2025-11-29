@@ -106,7 +106,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Shooter velocity settings
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1525;  // Y button velocity (reduced from 1550 to prevent overshoot)
     
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
@@ -123,10 +123,10 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
     
     // Speed monitoring thresholds
-    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
+    public static final double SHOOTER_SPEED_THRESHOLD = 0.92; // 92% of target speed for green light (reduced from 95%)
     public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
     public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 1.0;   // Seconds to wait for speed stabilization
+    public static final double SHOOTER_STABILIZATION_TIME = 0.5;   // Seconds to wait for speed stabilization (reduced from 1.0s)
     
     // Indexor stuck detection
     public static final double INDEXOR_STUCK_TIMEOUT = 0.5;  // 0.5 seconds as specified
@@ -574,15 +574,18 @@ public class TeleOpDECODE extends LinearOpMode {
             telemetry.addData("Shooter Status", "OFF");
         } else {
             // Shooter is off or running at different speed - start at specified velocity
-            shooter.setVelocity(velocity);
+            // Use ramping for smoother acceleration and less overshoot
+            double startVelocity = shooterRunning ? currentShooterVelocity : velocity * 0.7; // Start at 70% if cold start
+            shooter.setVelocity(startVelocity);
             shooterServo.setPower(SHOOTER_SERVO_POWER);
             shooterRunning = true;
             currentShooterVelocity = velocity;
             shooterStabilizationTimer.reset();
             shooterSpeedStable = false;
             
-            telemetry.addData("🎯 Shooter STARTED", "%.0f ticks/sec", velocity);
-            telemetry.addData("Shooter Status", "RUNNING");
+            telemetry.addData("🎯 Shooter STARTING", "Ramping to %.0f ticks/sec", velocity);
+            telemetry.addData("Initial Speed", "%.0f ticks/sec (70%%)", startVelocity);
+            telemetry.addData("Shooter Status", "RAMPING UP");
         }
         telemetry.update();
     }
@@ -829,12 +832,25 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Continuously reapply shooter velocity to maintain consistent speed
-        shooter.setVelocity(currentShooterVelocity);
-        
         double currentVelocity = shooter.getVelocity();
-        double speedError = Math.abs(currentVelocity - currentShooterVelocity);
         double stabilizationTime = shooterStabilizationTimer.seconds();
+        
+        // Implement velocity ramping to prevent overshoot
+        // Gradually increase from 70% to 100% over first 0.5 seconds
+        double targetVelocity;
+        if (stabilizationTime < 0.5) {
+            // Ramp from 70% to 100% over 0.5 seconds
+            double rampFactor = 0.7 + (0.3 * (stabilizationTime / 0.5));
+            targetVelocity = currentShooterVelocity * rampFactor;
+        } else {
+            // After ramp period, use full target velocity
+            targetVelocity = currentShooterVelocity;
+        }
+        
+        // Apply velocity with ramping
+        shooter.setVelocity(targetVelocity);
+        
+        double speedError = Math.abs(currentVelocity - currentShooterVelocity);
         
         // Check if speed is within tolerance
         boolean speedWithinTolerance = speedError <= SHOOTER_SPEED_TOLERANCE;
@@ -859,11 +875,14 @@ public class TeleOpDECODE extends LinearOpMode {
         double currentVelocity = shooter.getVelocity();
         double speedPercentage = currentVelocity / currentShooterVelocity;
         
-        if (shooterSpeedStable && speedPercentage > SHOOTER_SPEED_THRESHOLD) {
-            // Speed is optimal and stable - green light (95%+ and stable)
+        // Show green if speed is at threshold OR if stable and close to target
+        // This makes green light more responsive and reliable
+        if (speedPercentage >= SHOOTER_SPEED_THRESHOLD || 
+            (shooterSpeedStable && speedPercentage >= 0.90)) {
+            // Speed is optimal - green light (92%+ OR stable at 90%+)
             speedLight.setPosition(LIGHT_GREEN_POSITION);
         } else if (currentVelocity > 50 && speedPercentage > SHOOTER_MIN_SPEED_THRESHOLD) {
-            // Speed is acceptable but may not be stable - white light (85%+ of target)
+            // Speed is acceptable but not optimal - white light (85%+ of target)
             speedLight.setPosition(LIGHT_WHITE_POSITION);
         } else {
             // Speed is too low for consistent shooting - off (no light)
