@@ -62,6 +62,7 @@ public class TeleOpDECODE extends LinearOpMode {
     private boolean previousA2 = false;  // Gamepad2 A button (AprilTag alignment)
     private boolean previousB2 = false;  // Gamepad2 B button (trigger)
     private boolean previousX2 = false;  // Gamepad2 X button (advance indexer)
+    private boolean previousY2 = false;  // Gamepad2 Y button (3-shot sequence)
     private boolean previousLeftBumper2 = false;  // Gamepad2 left bumper (indexer +10 degrees)
     private boolean previousLeftTrigger2 = false;  // Gamepad2 left trigger (indexer -10 degrees)
     
@@ -89,8 +90,9 @@ public class TeleOpDECODE extends LinearOpMode {
     // Trigger sequence variables
     private boolean triggerSequenceActive = false;
     private ElapsedTime triggerTimer = new ElapsedTime();
-    private int triggerSequenceStep = 0;  // 0=home, 1=first fire, 2=intermittent, 3=second fire, 4=complete
-    private boolean firstFireComplete = false;
+    private int triggerSequenceStep = 0;  // 0=home, 1-8 for 3-shot sequence
+    private int shotsFired = 0;
+    private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -182,7 +184,8 @@ public class TeleOpDECODE extends LinearOpMode {
         telemetry.addData("GAMEPAD2 CONTROLS:", "");
         telemetry.addData("A", "Align with AprilTag");
         telemetry.addData("X", "Advance Indexer");
-        telemetry.addData("B", "Trigger Function");
+        telemetry.addData("B", "Trigger Function (Single Shot)");
+        telemetry.addData("Y", "Three-Shot Sequence");
         telemetry.addData("Left Stick -Y", "Outtake Function");
         telemetry.addData("Left Stick +Y", "Intake Function");
         telemetry.update();
@@ -390,6 +393,7 @@ public class TeleOpDECODE extends LinearOpMode {
         boolean currentA2 = gamepad2.a;
         boolean currentX2 = gamepad2.x;
         boolean currentB2 = gamepad2.b;
+        boolean currentY2 = gamepad2.y;
         boolean currentLeftBumper2 = gamepad2.left_bumper;
         boolean currentLeftTrigger2 = gamepad2.left_trigger > 0.5;  // Treat trigger as button when > 50%
         
@@ -403,9 +407,14 @@ public class TeleOpDECODE extends LinearOpMode {
             advanceIndexer();
         }
         
-        // Handle B button - Trigger Function
+        // Handle B button - Trigger Function (single shot)
         if (currentB2 && !previousB2) {
             triggerFunction();
+        }
+        
+        // Handle Y button - Three Shot Sequence
+        if (currentY2 && !previousY2) {
+            startThreeShotSequence();
         }
         
         // Handle Left Bumper - Increment indexer rotation by 10 degrees
@@ -422,6 +431,7 @@ public class TeleOpDECODE extends LinearOpMode {
         previousA2 = currentA2;
         previousX2 = currentX2;
         previousB2 = currentB2;
+        previousY2 = currentY2;
         previousLeftBumper2 = currentLeftBumper2;
         previousLeftTrigger2 = currentLeftTrigger2;
     }
@@ -752,12 +762,11 @@ public class TeleOpDECODE extends LinearOpMode {
     }
     
     /**
-     * Function Trigger
+     * Function Trigger (single shot)
      * 1) Check shooter is running at target velocity
      * 2) Put the servo in fire position for 0.5 sec
-     * 3) Move to intermittent position
-     * 4) Fire again for 0.5 sec
-     * 5) Return to home position
+     * 3) Return to home position
+     * 4) Advance indexer
      */
     private void triggerFunction() {
         if (triggerSequenceActive) {
@@ -781,14 +790,49 @@ public class TeleOpDECODE extends LinearOpMode {
         indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         triggerSequenceActive = true;
-        triggerSequenceStep = 1;  // Step 1: First fire
-        firstFireComplete = false;
+        triggerSequenceStep = 1;  // Step 1: Single fire
+        shotsFired = 0;
         triggerTimer.reset();
         
-        telemetry.addData("🎯 Trigger Function", "DOUBLE-FIRE SEQUENCE STARTED");
+        telemetry.addData("🎯 Trigger Function", "SINGLE SHOT STARTED");
         telemetry.addData("Shooter Status", "RUNNING at %.0f ticks/sec", currentShooterVelocity);
-        telemetry.addData("Trigger Position", "FIRST FIRE (%.1f seconds)", TRIGGER_FIRE_DURATION);
+        telemetry.addData("Trigger Position", "FIRE (%.1f seconds)", TRIGGER_FIRE_DURATION);
         telemetry.addData("Indexer Mode", "FLOAT (for firing)");
+        telemetry.update();
+    }
+    
+    /**
+     * Start three-shot sequence (gamepad2 Y button)
+     * Fires 3 shots with indexer advance between each shot
+     */
+    private void startThreeShotSequence() {
+        if (triggerSequenceActive) {
+            telemetry.addData("⚠️ Three-Shot", "Sequence already active");
+            return;
+        }
+        
+        if (!shooterRunning) {
+            telemetry.addData("⚠️ Three-Shot", "Shooter not running - use gamepad1 B/Y to set speed first");
+            telemetry.update();
+            return;
+        }
+        
+        // Start trigger sequence - move to fire position for first shot
+        triggerServo.setPosition(TRIGGER_FIRE);
+        
+        // Put indexer in float mode while trigger is firing
+        indexor.setPower(0);
+        indexor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        
+        triggerSequenceActive = true;
+        triggerSequenceStep = 1;  // Step 1: First fire
+        shotsFired = 0;
+        triggerTimer.reset();
+        
+        telemetry.addData("🎯 THREE-SHOT SEQUENCE", "STARTED");
+        telemetry.addData("Shooter Status", "RUNNING at %.0f ticks/sec", currentShooterVelocity);
+        telemetry.addData("Shots to Fire", "3 shots with auto-advance");
         telemetry.update();
     }
     
@@ -800,31 +844,77 @@ public class TeleOpDECODE extends LinearOpMode {
         double elapsedTime = triggerTimer.seconds();
         
         switch (triggerSequenceStep) {
-            case 1: // First fire position
-                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
-                    // Return to home position
+            case 1: // First shot - fire position (shorter duration for first shot)
+                if (elapsedTime >= 0.3) {
                     triggerServo.setPosition(TRIGGER_HOME);
+                    shotsFired = 1;
                     triggerSequenceStep = 2;
-                    firstFireComplete = true;
-                    
-                    telemetry.addData("🏠 Trigger", "Returning to HOME position");
-                    telemetry.addData("First Fire", "COMPLETE");
+                    triggerTimer.reset();
                 }
                 break;
                 
-            case 2: // Sequence complete - advance indexer
-                triggerSequenceActive = false;
-                triggerSequenceStep = 0;
-                firstFireComplete = false;
+            case 2: // First shot complete - advance indexer
+                if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
+                    advanceIndexer();
+                    triggerSequenceStep = 3;
+                    triggerTimer.reset();
+                }
+                break;
                 
-                // Advance indexer after double-fire sequence
-                advanceIndexer();
+            case 3: // Second shot - wait before firing
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_FIRE);
+                    triggerSequenceStep = 4;
+                    triggerTimer.reset();
+                }
+                break;
                 
-                telemetry.addData("✅ Trigger Sequence", "DOUBLE-FIRE COMPLETE - advancing indexer");
+            case 4: // Second shot hold
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_HOME);
+                    shotsFired = 2;
+                    triggerSequenceStep = 5;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 5: // Second shot complete - advance indexer
+                if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
+                    advanceIndexer();
+                    triggerSequenceStep = 6;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 6: // Third shot - wait before firing
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_FIRE);
+                    triggerSequenceStep = 7;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 7: // Third shot hold
+                if (elapsedTime >= TRIGGER_FIRE_DURATION) {
+                    triggerServo.setPosition(TRIGGER_HOME);
+                    shotsFired = 3;
+                    triggerSequenceStep = 8;
+                    triggerTimer.reset();
+                }
+                break;
+                
+            case 8: // Final advance indexer
+                if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
+                    advanceIndexer();
+                    triggerSequenceStep = 0;
+                    triggerSequenceActive = false;
+                    shotsFired = 0;
+                    
+                    telemetry.addData("✅ THREE-SHOT SEQUENCE", "COMPLETE - 3 shots fired!");
+                    telemetry.update();
+                }
                 break;
         }
-        
-        telemetry.update();
     }
     
     private void updateShooterSpeedMonitoring() {
@@ -975,21 +1065,29 @@ public class TeleOpDECODE extends LinearOpMode {
         // Trigger status
         if (triggerSequenceActive) {
             String stepDescription;
-            double timeLeft = TRIGGER_FIRE_DURATION - triggerTimer.seconds();
             
-            switch (triggerSequenceStep) {
-                case 1:
-                    stepDescription = String.format("FIRE (%.1fs left)", timeLeft);
-                    break;
-                case 2:
-                    stepDescription = "Returning to HOME";
-                    break;
-                default:
-                    stepDescription = "Unknown step";
-                    break;
+            if (triggerSequenceStep == 1) {
+                stepDescription = String.format("Shot 1: FIRING");
+            } else if (triggerSequenceStep == 2) {
+                stepDescription = String.format("Shot 1: Advancing indexer...");
+            } else if (triggerSequenceStep == 3) {
+                stepDescription = String.format("Shot 2: Preparing...");
+            } else if (triggerSequenceStep == 4) {
+                stepDescription = String.format("Shot 2: FIRING");
+            } else if (triggerSequenceStep == 5) {
+                stepDescription = String.format("Shot 2: Advancing indexer...");
+            } else if (triggerSequenceStep == 6) {
+                stepDescription = String.format("Shot 3: Preparing...");
+            } else if (triggerSequenceStep == 7) {
+                stepDescription = String.format("Shot 3: FIRING");
+            } else if (triggerSequenceStep == 8) {
+                stepDescription = String.format("Shot 3: Final advance...");
+            } else {
+                stepDescription = "Unknown step";
             }
             
             telemetry.addData("Trigger Sequence", "%s", stepDescription);
+            telemetry.addData("Shots Fired", "%d / 3", shotsFired);
         } else {
             double currentTriggerPos = triggerServo.getPosition();
             String positionName;
