@@ -54,7 +54,7 @@ public class AutoDECODERedFar extends LinearOpMode {
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Red alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1550;      // Range: 1200-1800 ticks/sec (Red back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1470;      // Range: 1200-1800 ticks/sec (Red back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
@@ -67,7 +67,7 @@ public class AutoDECODERedFar extends LinearOpMode {
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
     public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light
     public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
-    public static final double LIGHT_RED_POSITION = 0.75;     // Servo position for red light (alliance indicator)
+    public static final double LIGHT_RED_POSITION = 0.25;     // Servo position for red light (alliance indicator)
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
@@ -139,7 +139,7 @@ public class AutoDECODERedFar extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(115))  // Mirror: -115 becomes +115
-                .lineToY(START_POSE.position.y - 30.0)  // Mirror: +30 becomes -30
+                .lineToY(START_POSE.position.y - 29.0)  // Mirror: +30 becomes -29
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after forward movement
                     intake.setPower(0);
@@ -200,9 +200,18 @@ public class AutoDECODERedFar extends LinearOpMode {
         
         // Execute trajectory 2
         Actions.runBlocking(trajectory2);
+
         
         telemetry.addData("✅ Trajectory 2", "Complete");
         telemetry.update();
+
+
+        moveIndexorToNextPosition();
+        fireShot(4);
+        moveIndexorToNextPosition();
+        fireShot(5);
+        moveIndexorToNextPosition();
+        fireShot(6);
 
         Actions.runBlocking(trajectoryCloseOut);
         
@@ -369,6 +378,10 @@ public class AutoDECODERedFar extends LinearOpMode {
             sleep(50);
         }
         
+        //Trigger intermittent firing
+        triggerServo.setPosition(0.25);
+        triggerServo.setPosition(TRIGGER_FIRE);
+        sleep(50);
         // Return trigger to home position
         triggerServo.setPosition(TRIGGER_HOME);
         
@@ -387,12 +400,19 @@ public class AutoDECODERedFar extends LinearOpMode {
         telemetry.update();
         
         // Get current position and calculate target
-        int currentPosition = indexor.getCurrentPosition();
-        int targetPosition = currentPosition + (int)INDEXOR_TICKS;
-        
-        // Set indexor to run to position
-        indexor.setTargetPosition(targetPosition);
+        double currentPosition = indexor.getCurrentPosition();
+        double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
+        if (currentPosition>targetPosition)
+        {
+            targetPosition = currentPosition+INDEXOR_TICKS*2-(currentPosition % INDEXOR_TICKS);
+        }
+
+        IndexerPreviousPosition = targetPosition;
+
+            // Set indexor to run to position
+        indexor.setTargetPosition((int)targetPosition);
         indexor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        conveyor.setPower(CONVEYOR_POWER);
         indexor.setPower(AUTO_INDEXOR_POWER);
         
         ElapsedTime indexorTimer = new ElapsedTime();
@@ -400,18 +420,20 @@ public class AutoDECODERedFar extends LinearOpMode {
         
         // Wait for indexor to reach position
         while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
-            telemetry.addData("🎯 Target Position", "%d ticks", targetPosition);
+            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
             telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
             telemetry.addData("🔄 Indexor Status", indexor.isBusy() ? "Moving..." : "Complete");
             telemetry.addData("⏱️ Elapsed", "%.1f / %.1f seconds", indexorTimer.seconds(), INDEXOR_MOVE_TIMEOUT);
             telemetry.update();
             sleep(50);
         }
-        
+
         // Stop indexor
         indexor.setPower(0);
         indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        
+
+        conveyor.setPower(0);
+
         telemetry.addData("✅ Indexor", "Position advanced");
         telemetry.update();
     }
