@@ -89,6 +89,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Trigger sequence variables
     private boolean triggerSequenceActive = false;
+    private boolean isThreeShotMode = false;  // Track if doing 3-shot sequence or single shot
     private ElapsedTime triggerTimer = new ElapsedTime();
     private int triggerSequenceStep = 0;  // 0=home, 1-8 for 3-shot sequence
     private int shotsFired = 0;
@@ -107,8 +108,8 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double INDEXOR_TICKS_PER_10_DEGREES = INDEXOR_TICKS_PER_DEGREE * 10.0;  // ~14.94 ticks per 10°
     
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1270;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1250;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1500;  // Y button velocity
     
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
@@ -787,6 +788,7 @@ public class TeleOpDECODE extends LinearOpMode {
         indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         triggerSequenceActive = true;
+        isThreeShotMode = false;  // Single shot mode
         triggerSequenceStep = 1;  // Step 1: Single fire
         shotsFired = 0;
         triggerTimer.reset();
@@ -823,6 +825,7 @@ public class TeleOpDECODE extends LinearOpMode {
         indexor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         
         triggerSequenceActive = true;
+        isThreeShotMode = true;  // Three-shot mode
         triggerSequenceStep = 1;  // Step 1: First fire
         shotsFired = 0;
         triggerTimer.reset();
@@ -853,8 +856,20 @@ public class TeleOpDECODE extends LinearOpMode {
             case 2: // First shot complete - advance indexer
                 if (elapsedTime >= INDEXER_ADVANCE_WAIT) {
                     advanceIndexer();
-                    triggerSequenceStep = 3;
-                    triggerTimer.reset();
+                    
+                    // If single shot mode, end sequence here
+                    if (!isThreeShotMode) {
+                        triggerSequenceStep = 0;
+                        triggerSequenceActive = false;
+                        shotsFired = 0;
+                        
+                        telemetry.addData("✅ SINGLE SHOT", "COMPLETE - 1 shot fired!");
+                        telemetry.update();
+                    } else {
+                        // Continue to shot 2 for three-shot mode
+                        triggerSequenceStep = 3;
+                        triggerTimer.reset();
+                    }
                 }
                 break;
                 
