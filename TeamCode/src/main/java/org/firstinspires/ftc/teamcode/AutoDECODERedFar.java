@@ -54,7 +54,7 @@ public class AutoDECODERedFar extends LinearOpMode {
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Red alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1550;      // Range: 1200-1800 ticks/sec (Red back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1470;      // Range: 1200-1800 ticks/sec (Red back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
@@ -139,7 +139,7 @@ public class AutoDECODERedFar extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(115))  // Mirror: -115 becomes +115
-                .lineToY(START_POSE.position.y - 30.0)  // Mirror: +30 becomes -30
+                .lineToY(START_POSE.position.y - 29.0)  // Mirror: +30 becomes -30
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after forward movement
                     intake.setPower(0);
@@ -173,8 +173,8 @@ public class AutoDECODERedFar extends LinearOpMode {
         telemetry.addData("✅ Trajectory 1", "Complete");
         telemetry.update();
         
-        // Step 2: Shooter sequence - Fire 3 shots
-        telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
+        // Step 2: Shooter sequence - Fire first 3 shots
+        telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence (First 3 shots)...");
         telemetry.update();
         
         startShooterSystem();
@@ -189,27 +189,61 @@ public class AutoDECODERedFar extends LinearOpMode {
         fireShot(3);
         moveIndexorToNextPosition();
         
-        //stopShooterSystem();
-        
         telemetry.addData("✅ Shooter Sequence", "Complete - 3 shots fired");
         telemetry.update();
         
-        // Step 3: Execute Trajectory 2 (move forward with turn, then forward with intake)
-        telemetry.addData("🚀 STEP 3", "Executing Trajectory 2...");
+        // Step 3: Execute Trajectory 2 (collect 3 more balls)
+        telemetry.addData("🚀 STEP 3", "Executing Trajectory 2 (collecting balls)...");
         telemetry.update();
         
-        // Execute trajectory 2
         Actions.runBlocking(trajectory2);
         
-        telemetry.addData("✅ Trajectory 2", "Complete");
+        telemetry.addData("✅ Trajectory 2", "Complete - 3 balls collected");
         telemetry.update();
 
+        // Step 4: Return to shooting position
+        telemetry.addData("🚀 STEP 4", "Returning to shooting position...");
+        telemetry.update();
+        
+        // Build return trajectory to shooting position
+        Action returnToShoot = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0, START_POSE.position.y - 1, 0))
+                .lineToYSplineHeading(START_POSE.position.y, Math.toRadians(0))
+                .build();
+        
+        Actions.runBlocking(returnToShoot);
+        
+        telemetry.addData("✅ Return", "Back at shooting position");
+        telemetry.update();
+        
+        // Step 5: Fire second set of 3 shots
+        telemetry.addData("🚀 STEP 5", "Executing Shooter Sequence (Second 3 shots)...");
+        telemetry.update();
+        
+        waitForShooterSpeed();
+        
+        fireShot(4);
+        moveIndexorToNextPosition();
+        
+        fireShot(5);
+        moveIndexorToNextPosition();
+        
+        fireShot(6);
+        moveIndexorToNextPosition();
+        
+        stopShooterSystem();
+        
+        telemetry.addData("✅ Shooter Sequence", "Complete - 3 more shots fired (6 total)");
+        telemetry.update();
+        
+        // Step 6: Final movement
+        telemetry.addData("🚀 STEP 6", "Executing final movement...");
+        telemetry.update();
+        
         Actions.runBlocking(trajectoryCloseOut);
         
         telemetry.addData("✅ AUTONOMOUS", "Red Back Road Runner sequence completed!");
         telemetry.addData("🔴 Alliance", "RED");
-        telemetry.addData("📍 Final Position", "27\" fwd + 115° turn + 30\" fwd");
-        telemetry.addData("🎯 Shots Fired", "3 shots");
+        telemetry.addData("🎯 Shots Fired", "6 shots total");
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
     }
