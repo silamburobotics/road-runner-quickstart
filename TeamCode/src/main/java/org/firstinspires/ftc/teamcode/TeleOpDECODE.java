@@ -107,7 +107,7 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double INDEXOR_TICKS_PER_10_DEGREES = INDEXOR_TICKS_PER_DEGREE * 10.0;  // ~14.94 ticks per 10°
     
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1270;  // B button velocity
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Color sensor settings
