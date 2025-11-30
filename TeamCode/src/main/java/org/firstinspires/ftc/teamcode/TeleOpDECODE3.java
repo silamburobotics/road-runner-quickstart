@@ -111,6 +111,12 @@ public class TeleOpDECODE3 extends LinearOpMode {
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1250;  // B button velocity
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1500;  // Y button velocity
     
+    // Shooter PID coefficients for velocity control
+    public static double VELOCITY_P = 3.5;  // Proportional coefficient (increased for faster response on restart)
+    public static double VELOCITY_I = 0.1;  // Integral coefficient
+    public static double VELOCITY_D = 0.15;  // Derivative coefficient
+    public static double VELOCITY_F = 10.0;  // Feedforward coefficient
+    
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
     public static final double BALL_DETECTION_THRESHOLD = 0.15;
@@ -277,6 +283,9 @@ public class TeleOpDECODE3 extends LinearOpMode {
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        
+        // Set custom PID coefficients for shooter velocity control
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
         
         // Configure drive motors
         leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
