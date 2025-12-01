@@ -133,7 +133,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
 
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
-        trajectory2 = drive.actionBuilder(START_POSE)
+        trajectory2 = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
                 .turnTo(Math.toRadians(-115))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start intake system during rearward movement
@@ -173,6 +173,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         // Step 1: Execute Trajectory 1 (move to shooting position)
         telemetry.addData("🚀 STEP 1", "Executing Trajectory 1...");
         telemetry.update();
+        startShooterSystem();
         Actions.runBlocking(trajectory1);
         
         telemetry.addData("✅ Trajectory 1", "Complete");
@@ -182,7 +183,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
         telemetry.update();
         
-        startShooterSystem();
+        
         waitForShooterSpeed();
         
         fireShot(1);
