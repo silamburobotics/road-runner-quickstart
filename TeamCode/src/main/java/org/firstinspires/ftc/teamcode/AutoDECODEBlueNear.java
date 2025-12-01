@@ -153,10 +153,10 @@ public class AutoDECODEBlueNear extends LinearOpMode {
                     indexor.setPower(0);
                     return false;
                 })
-                .lineToYSplineHeading(START_POSE.position.y+1, Math.toRadians(0))
+                .lineToYSplineHeading(START_POSE.position.y, Math.toRadians(0))
                 .build();
 
-         trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0,START_POSE.position.y+1,0))
+         trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
                 .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y + LEFTWARD_DISTANCE), START_POSE.heading.toDouble())  // Strafe backward 24 inches (reversed direction)
                 .build();
 
