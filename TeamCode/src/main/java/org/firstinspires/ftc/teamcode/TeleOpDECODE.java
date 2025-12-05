@@ -86,6 +86,8 @@ public class TeleOpDECODE extends LinearOpMode {
     private double currentShooterVelocity = 1300;  // Default velocity
     private ElapsedTime shooterStabilizationTimer = new ElapsedTime(); // Timer for speed stabilization
     private boolean shooterSpeedStable = false; // Track if speed is stable
+    private ElapsedTime boostTimer = new ElapsedTime(); // Timer for voltage boost duration
+    private boolean boostActive = false; // Track if voltage boost is active
     
     // Trigger sequence variables
     private boolean triggerSequenceActive = false;
@@ -99,17 +101,21 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1270;  // B button velocity
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
-    // Shooter PID coefficients for velocity control
-    public static double VELOCITY_P = 4;  // Proportional coefficient (increased for faster response on restart)
-    public static double VELOCITY_I = 0.15;  // Integral coefficient
-    public static double VELOCITY_D = 0.3;  // Derivative coefficient
-    public static double VELOCITY_F = 13.0;  // Feedforward coefficient
+    // Shooter PID coefficients for velocity control - Optimized for Yellow Jacket 5203
+    public static double VELOCITY_P = 2.5;   // Lower P for brushed motor (smoother response)
+    public static double VELOCITY_I = 0.3;   // Higher I to maintain speed during load
+    public static double VELOCITY_D = 0.2;   // Moderate D for damping
+    public static double VELOCITY_F = 15.0;  // Higher F for better feedforward at high RPM
 
-    // Speed monitoring thresholds
-    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
-    public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
-    public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 0.3;   // Seconds to wait for speed stabilization (reduced from 1.0)
+    // Speed monitoring thresholds - Relaxed for brushed motor characteristics
+    public static final double SHOOTER_SPEED_THRESHOLD = 0.90;      // 90% instead of 95%
+    public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85;  // Keep at 85%
+    public static final double SHOOTER_SPEED_TOLERANCE = 100;       // Wider tolerance for brush noise (100 ticks)
+    public static final double SHOOTER_STABILIZATION_TIME = 0.4;    // Faster stabilization (0.4s instead of 1.0s)
+    
+    // Voltage boost settings for faster spin-up
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.3;      // 30% overspeed during boost
+    public static final double BOOST_DURATION = 0.3;                // 300ms boost duration
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -594,14 +600,18 @@ public class TeleOpDECODE extends LinearOpMode {
             telemetry.addData("Shooter Status", "OFF");
         } else {
             // Shooter is off or running at different speed - start at specified velocity
-            shooter.setVelocity(velocity);
+            // Apply voltage boost for faster spin-up
+            double boostedVelocity = velocity * BOOST_VOLTAGE_MULTIPLIER;
+            shooter.setVelocity(boostedVelocity);
             shooterServo.setPower(SHOOTER_SERVO_POWER);
             shooterRunning = true;
             currentShooterVelocity = velocity;
             shooterStabilizationTimer.reset();
             shooterSpeedStable = false;
+            boostTimer.reset();
+            boostActive = true;
             
-            telemetry.addData("🎯 Shooter STARTED", "%.0f ticks/sec", velocity);
+            telemetry.addData("🎯 Shooter STARTED", "%.0f ticks/sec (BOOST: %.0f)", velocity, boostedVelocity);
             telemetry.addData("Shooter Status", "RUNNING");
         }
         telemetry.update();
@@ -943,8 +953,21 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Continuously reapply shooter velocity to maintain consistent speed
-        shooter.setVelocity(currentShooterVelocity);
+        // Handle voltage boost transition
+        if (boostActive && boostTimer.seconds() >= BOOST_DURATION) {
+            // Boost period complete - transition to normal velocity
+            shooter.setVelocity(currentShooterVelocity);
+            boostActive = false;
+            telemetry.addData("Boost Status", "COMPLETE - Normal velocity applied");
+        } else if (boostActive) {
+            // Still in boost phase - maintain boosted velocity
+            double boostedVelocity = currentShooterVelocity * BOOST_VOLTAGE_MULTIPLIER;
+            shooter.setVelocity(boostedVelocity);
+            telemetry.addData("Boost Status", "ACTIVE (%.1fs remaining)", BOOST_DURATION - boostTimer.seconds());
+        } else {
+            // Normal operation - continuously reapply shooter velocity to maintain consistent speed
+            shooter.setVelocity(currentShooterVelocity);
+        }
         
         double currentVelocity = shooter.getVelocity();
         double speedError = Math.abs(currentVelocity - currentShooterVelocity);
