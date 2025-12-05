@@ -28,6 +28,10 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
     private Servo speedLight;
     private Servo triggerServo;
     
+    // Voltage boost tracking
+    private ElapsedTime boostTimer = new ElapsedTime();
+    private boolean boostActive = false;
+    
     // Declare mecanum drive
     private MecanumDrive drive;
     
@@ -42,11 +46,11 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
     private static final Pose2d START_POSE = new Pose2d(12.0, -108.0, 0.0); // Starting pose for Road Runner (back position) - mirrored Y
 
 
-    // Shooter PID coefficients for velocity control
-    public static double VELOCITY_P = 3.5;  // Proportional coefficient (increased for faster response on restart)
-    public static double VELOCITY_I = 0.1;  // Integral coefficient
-    public static double VELOCITY_D = 0.15;  // Derivative coefficient
-    public static double VELOCITY_F = 10.0;  // Feedforward coefficien
+    // Shooter PID coefficients for velocity control - Optimized for Yellow Jacket 5203
+    public static double VELOCITY_P = 2.5;   // Lower P for brushed motor (smoother response)
+    public static double VELOCITY_I = 0.3;   // Higher I to maintain speed during load
+    public static double VELOCITY_D = 0.2;   // Moderate D for damping
+    public static double VELOCITY_F = 15.0;  // Higher F for better feedforward at high RPM
 
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -60,13 +64,17 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
     
     // Shooter velocity control (ticks per second) - Red alliance optimized
     public static double SHOOTER_TARGET_VELOCITY = 1470;      // Range: 1200-1800 ticks/sec (Red back position)
-    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
+    public static final double SHOOTER_SPEED_THRESHOLD = 0.90; // 90% instead of 95% - relaxed for brushed motor
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
-    // Speed stabilization settings
-    public static final double SHOOTER_SPEED_TOLERANCE = 25;    // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 0.5; // Seconds to wait for speed stabilization between shots
+    // Speed stabilization settings - Relaxed for brushed motor characteristics
+    public static final double SHOOTER_SPEED_TOLERANCE = 100;    // Wider tolerance for brush noise (100 ticks)
+    public static final double SHOOTER_STABILIZATION_TIME = 0.4; // Faster stabilization (0.4s instead of 0.5s)
     public static final double SHOOTER_VELOCITY_CORRECTION_FACTOR = 1.02; // Slight overcorrection for consistency
+    
+    // Voltage boost settings for faster spin-up
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.3;      // 30% overspeed during boost
+    public static final double BOOST_DURATION = 0.3;                // 300ms boost duration
     
     // Speed light control settings (using servo positions for LED control)
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
@@ -249,9 +257,12 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
         telemetry.addData("🚀 STEP 1", "Starting shooter system...");
         telemetry.update();
         
-        // Start shooter with optimized velocity control for consistency
-        double initialVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-        shooter.setVelocity(initialVelocity);
+        // Apply voltage boost for faster spin-up
+        double targetVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
+        double boostedVelocity = targetVelocity * BOOST_VOLTAGE_MULTIPLIER;
+        shooter.setVelocity(boostedVelocity);
+        boostTimer.reset();
+        boostActive = true;
         
         // Start shooter servo
         shooterServo.setPower(SHOOTER_SERVO_POWER);
@@ -262,8 +273,8 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
         // Set alliance indicator light
         speedLight.setPosition(LIGHT_RED_POSITION);
         
-        telemetry.addData("✅ Shooter", "Started at %.0f ticks/sec (corrected)", initialVelocity);
-        telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
+        telemetry.addData("✅ Shooter", "Started with BOOST at %.0f ticks/sec", boostedVelocity);
+        telemetry.addData("🎯 Target", "%.0f ticks/sec (after boost)", targetVelocity);
         telemetry.addData("✅ Shooter Servo", "Running at %.1f power", SHOOTER_SERVO_POWER);
         telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
         telemetry.addData("🔴 Alliance Light", "Red indicator active");
@@ -271,13 +282,28 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
     }
     
     private void waitForShooterSpeed() {
-        telemetry.addData("⏳ STEP", "Waiting for shooter to reach speed...");
+        telemetry.addData("⌛ STEP", "Waiting for shooter to reach speed...");
         telemetry.update();
         
         ElapsedTime timeout = new ElapsedTime();
         timeout.reset();
         
+        double targetVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
+        
         while (opModeIsActive() && timeout.seconds() < SHOOTER_SPINUP_TIMEOUT) {
+            // Handle voltage boost transition
+            if (boostActive && boostTimer.seconds() >= BOOST_DURATION) {
+                // Boost period complete - transition to normal velocity
+                shooter.setVelocity(targetVelocity);
+                boostActive = false;
+                telemetry.addData("🔄 Boost Status", "COMPLETE - Normal velocity applied");
+            } else if (boostActive) {
+                // Still in boost phase - maintain boosted velocity
+                double boostedVelocity = targetVelocity * BOOST_VOLTAGE_MULTIPLIER;
+                shooter.setVelocity(boostedVelocity);
+                telemetry.addData("⚡ Boost Status", "ACTIVE (%.1fs remaining)", BOOST_DURATION - boostTimer.seconds());
+            }
+            
             double currentVelocity = shooter.getVelocity();
             double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
             
