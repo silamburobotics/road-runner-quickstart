@@ -95,12 +95,22 @@ public class TeleOpDECODE extends LinearOpMode {
     private int shotsFired = 0;
     private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
 
+    // Shooter velocity settings
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1270;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
+    
     // Shooter PID coefficients for velocity control
     public static double VELOCITY_P = 4;  // Proportional coefficient (increased for faster response on restart)
     public static double VELOCITY_I = 0.15;  // Integral coefficient
     public static double VELOCITY_D = 0.3;  // Derivative coefficient
     public static double VELOCITY_F = 13.0;  // Feedforward coefficient
 
+    // Speed monitoring thresholds
+    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
+    public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
+    public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
+    public static final double SHOOTER_STABILIZATION_TIME = 0.3;   // Seconds to wait for speed stabilization (reduced from 1.0)
+    
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
@@ -112,10 +122,6 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double INDEXOR_TICKS_PER_120_DEGREES = INDEXOR_TICKS_PER_REVOLUTION / 3.0;  // 179.23 ticks per 120°
     public static final double INDEXOR_TICKS_PER_DEGREE = INDEXOR_TICKS_PER_REVOLUTION / 360.0;  // ~1.49 ticks per degree
     public static final double INDEXOR_TICKS_PER_10_DEGREES = INDEXOR_TICKS_PER_DEGREE * 10.0;  // ~14.94 ticks per 10°
-    
-    // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1270;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
@@ -130,12 +136,6 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
     public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light
     public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
-    
-    // Speed monitoring thresholds
-    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
-    public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
-    public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 0.3;   // Seconds to wait for speed stabilization (reduced from 1.0)
     
     // Indexor stuck detection
     public static final double INDEXOR_STUCK_TIMEOUT = 0.5;  // 0.5 seconds as specified
