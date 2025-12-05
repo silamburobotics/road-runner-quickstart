@@ -41,12 +41,7 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
     private static final String POSITION = "BACK";
     private static final Pose2d START_POSE = new Pose2d(12.0, -108.0, 0.0); // Starting pose for Road Runner (back position) - mirrored Y
 
-
-    // Shooter PID coefficients for velocity control
-    public static double VELOCITY_P = 3.5;  // Proportional coefficient (increased for faster response on restart)
-    public static double VELOCITY_I = 0.1;  // Integral coefficient
-    public static double VELOCITY_D = 0.15;  // Derivative coefficient
-    public static double VELOCITY_F = 10.0;  // Feedforward coefficien
+    // Shooter Motor Power Setting
 
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -536,10 +531,6 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
         shooterServo.setDirection(DcMotorSimple.Direction.REVERSE);
         speedLight.setDirection(Servo.Direction.FORWARD);
         triggerServo.setDirection(Servo.Direction.FORWARD);
-
-
-        // Set custom PID coefficients for shooter velocity control
-        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
 
         // Initialize speed light to off position
         speedLight.setPosition(LIGHT_OFF_POSITION);

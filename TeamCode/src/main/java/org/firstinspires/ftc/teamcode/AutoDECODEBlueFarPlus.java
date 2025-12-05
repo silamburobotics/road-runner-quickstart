@@ -42,12 +42,6 @@ public class AutoDECODEBlueFarPlus extends LinearOpMode {
     private static final String POSITION = "BACK";
     private static final Pose2d START_POSE = new Pose2d(12.0, 108.0, 0.0); // Starting pose for Road Runner (back position)
 
-    // Shooter PID coefficients for velocity control
-    public static double VELOCITY_P = 3.5;  // Proportional coefficient (increased for faster response on restart)
-    public static double VELOCITY_I = 0.1;  // Integral coefficient
-    public static double VELOCITY_D = 0.15;  // Derivative coefficient
-    public static double VELOCITY_F = 10.0;  // Feedforward coefficient
-
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
@@ -528,9 +522,6 @@ public class AutoDECODEBlueFarPlus extends LinearOpMode {
         shooterServo = hardwareMap.get(CRServo.class, "shooterServo");
         speedLight = hardwareMap.get(Servo.class, "speedLight");
         triggerServo = hardwareMap.get(Servo.class, "triggerServo");
-
-        // Set custom PID coefficients for shooter velocity control
-        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
 
         // Initialize Road Runner drive
         drive = new MecanumDrive(hardwareMap, START_POSE);
