@@ -3,21 +3,19 @@ package org.firstinspires.ftc.teamcode;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.roadrunner.Action;
 import com.acmerobotics.roadrunner.Pose2d;
-import com.acmerobotics.roadrunner.TranslationalVelConstraint;
-import com.acmerobotics.roadrunner.Vector2d;
 import com.acmerobotics.roadrunner.ftc.Actions;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@Autonomous(name="Auto Red Far", group="Linear OpMode")
-public class AutoDECODERedFar extends LinearOpMode {
+@Autonomous(name="Auto Red Far ++", group="Linear OpMode")
+public class AutoDECODERedFarPlus extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
@@ -42,7 +40,14 @@ public class AutoDECODERedFar extends LinearOpMode {
     private static final String ALLIANCE = "RED";
     private static final String POSITION = "BACK";
     private static final Pose2d START_POSE = new Pose2d(12.0, -108.0, 0.0); // Starting pose for Road Runner (back position) - mirrored Y
-    
+
+
+    // Shooter PID coefficients for velocity control
+    public static double VELOCITY_P = 3.5;  // Proportional coefficient (increased for faster response on restart)
+    public static double VELOCITY_I = 0.1;  // Integral coefficient
+    public static double VELOCITY_D = 0.15;  // Derivative coefficient
+    public static double VELOCITY_F = 10.0;  // Feedforward coefficien
+
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
@@ -153,8 +158,25 @@ public class AutoDECODERedFar extends LinearOpMode {
                 .build();
 
         trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0, START_POSE.position.y - 1, 0))  // Mirror: +1 becomes -1
-                .lineToX(30)
-                .build();
+                //.lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(115))  // Mirror: -115 becomes +115
+                .splineToLinearHeading(new Pose2d(START_POSE.position.x+50,START_POSE.position.y+5,Math.toRadians(112)),0)
+                .afterTime(0, (telemetryPacket) -> {
+                    // Start intake system during forward movement
+                    intake.setPower(INTAKE_POWER);
+                    conveyor.setPower(CONVEYOR_POWER);
+                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    indexor.setPower(AUTO_INDEXOR_POWER);
+                    return false;
+                })
+                .setTangent(Math.toRadians(112))  // Mirror: -115 becomes +115
+                .lineToY(START_POSE.position.y - 18.0)  // Mirror: +30 becomes -29
+                .stopAndAdd((telemetryPacket) -> {
+                    // Stop intake system after forward movement
+                    intake.setPower(0);
+                    conveyor.setPower(0);
+                    indexor.setPower(0);
+                    return false;
+                })                .build();
 
         telemetry.addData("✅ Trajectory 1", "Built (ready position)");
         telemetry.addData("✅ Trajectory 2", "Built (27\" fwd + 115° turn + 30\" fwd)");
@@ -514,7 +536,11 @@ public class AutoDECODERedFar extends LinearOpMode {
         shooterServo.setDirection(DcMotorSimple.Direction.REVERSE);
         speedLight.setDirection(Servo.Direction.FORWARD);
         triggerServo.setDirection(Servo.Direction.FORWARD);
-        
+
+
+        // Set custom PID coefficients for shooter velocity control
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
+
         // Initialize speed light to off position
         speedLight.setPosition(LIGHT_OFF_POSITION);
         

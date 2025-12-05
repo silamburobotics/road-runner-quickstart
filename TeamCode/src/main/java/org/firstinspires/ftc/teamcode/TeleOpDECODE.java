@@ -94,7 +94,13 @@ public class TeleOpDECODE extends LinearOpMode {
     private int triggerSequenceStep = 0;  // 0=home, 1-8 for 3-shot sequence
     private int shotsFired = 0;
     private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
-    
+
+    // Shooter PID coefficients for velocity control
+    public static double VELOCITY_P = 4;  // Proportional coefficient (increased for faster response on restart)
+    public static double VELOCITY_I = 0.15;  // Integral coefficient
+    public static double VELOCITY_D = 0.3;  // Derivative coefficient
+    public static double VELOCITY_F = 13.0;  // Feedforward coefficient
+
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
@@ -108,8 +114,8 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double INDEXOR_TICKS_PER_10_DEGREES = INDEXOR_TICKS_PER_DEGREE * 10.0;  // ~14.94 ticks per 10°
     
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1250;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1500;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1270;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Color sensor settings
     public static final double COLOR_SENSOR_GAIN = 15.0;
@@ -129,7 +135,7 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
     public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
     public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 1.0;   // Seconds to wait for speed stabilization
+    public static final double SHOOTER_STABILIZATION_TIME = 0.3;   // Seconds to wait for speed stabilization (reduced from 1.0)
     
     // Indexor stuck detection
     public static final double INDEXOR_STUCK_TIMEOUT = 0.5;  // 0.5 seconds as specified
@@ -215,7 +221,10 @@ public class TeleOpDECODE extends LinearOpMode {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         conveyor = hardwareMap.get(DcMotorEx.class, "conveyor");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-        
+
+        // Set custom PID coefficients for shooter velocity control
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
+
         // Initialize servos
         shooterServo = hardwareMap.get(CRServo.class, "shooterServo");
         speedLight = hardwareMap.get(Servo.class, "speedLight");
@@ -358,12 +367,12 @@ public class TeleOpDECODE extends LinearOpMode {
         
         // Handle B button - Toggle Shooter Speed 1300
         if (currentB1 && !previousB1) {
-            toggleShooterSpeed(1300);
+            toggleShooterSpeed(SHOOTER_TARGET_VELOCITY_1300);
         }
         
         // Handle Y button - Toggle Shooter Speed 1600
         if (currentY1 && !previousY1) {
-            toggleShooterSpeed(1600);
+            toggleShooterSpeed(SHOOTER_TARGET_VELOCITY_1600);
         }
         
         // Update previous states
