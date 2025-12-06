@@ -289,7 +289,7 @@ public class AutoDECODERedNear extends LinearOpMode {
             }
             
             telemetry.update();
-            sleep(50);
+            sleep(2000);
         }
         
         // Timeout reached
