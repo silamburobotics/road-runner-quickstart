@@ -181,7 +181,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         startShooterSystem();
         waitForShooterSpeed();
 
-        sleep(3000);
+        sleep(1000);
         
         fireShot(1);
         moveIndexorToNextPosition();
