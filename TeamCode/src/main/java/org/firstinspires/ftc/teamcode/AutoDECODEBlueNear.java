@@ -55,7 +55,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Blue alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1250;      // Range: 1200-1800 ticks/sec (Blue back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1230;      // Range: 1200-1800 ticks/sec (Blue back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
@@ -134,7 +134,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
-                .turnTo(Math.toRadians(-130))
+                .turnTo(Math.toRadians(-133))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start intake system during rearward movement
                     intake.setPower(INTAKE_POWER);
@@ -143,8 +143,8 @@ public class AutoDECODEBlueNear extends LinearOpMode {
                     indexor.setPower(AUTO_INDEXOR_POWER);
                     return false;
                 })
-                .setTangent(Math.toRadians(-130))
-                .lineToY(START_POSE.position.y + 29.0)
+                .setTangent(Math.toRadians(-133))
+                .lineToY(START_POSE.position.y + 29.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement
