@@ -179,6 +179,8 @@ public class AutoDECODERedFar extends LinearOpMode {
         
         startShooterSystem();
         waitForShooterSpeed();
+
+        sleep(3000);
         
         fireShot(1);
         moveIndexorToNextPosition();
