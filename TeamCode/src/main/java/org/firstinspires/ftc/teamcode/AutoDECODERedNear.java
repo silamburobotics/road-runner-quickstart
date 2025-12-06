@@ -82,7 +82,7 @@ public class AutoDECODERedNear extends LinearOpMode {
     public double IndexerPreviousPosition = 0.0;  // Maximum time to wait for shooter to reach speed
 
  // Road Runner trajectory settings
-    public static final double REARWARD_DISTANCE = 50.0;      // Distance to move left (inches)
+    public static final double REARWARD_DISTANCE = 51.0;      // Distance to move left (inches)
     public static final double LEFTWARD_DISTANCE = 24.0;      // Distance to move forward (inches)
    
     // Road Runner trajectory settings
@@ -185,6 +185,7 @@ public class AutoDECODERedNear extends LinearOpMode {
         
         
         waitForShooterSpeed();
+        sleep(4000);
         
         fireShot(1);
         moveIndexorToNextPosition();
@@ -289,7 +290,7 @@ public class AutoDECODERedNear extends LinearOpMode {
             }
             
             telemetry.update();
-            sleep(2000);
+            sleep(50);
         }
         
         // Timeout reached
