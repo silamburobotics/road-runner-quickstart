@@ -96,7 +96,7 @@ public class TeleOpDECODE extends LinearOpMode {
     private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
 
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1290;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1330;  // B button velocity
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1550;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
@@ -106,7 +106,7 @@ public class TeleOpDECODE extends LinearOpMode {
     public static double VELOCITY_F = 13.0;  // Feedforward coefficient
 
     // Speed monitoring thresholds
-    public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed for green light
+    public static final double SHOOTER_SPEED_THRESHOLD = 0.90; // 95% of target speed for green light
     public static final double SHOOTER_MIN_SPEED_THRESHOLD = 0.85; // 85% minimum for white light
     public static final double SHOOTER_SPEED_TOLERANCE = 50;       // ticks/sec tolerance for "stable" speed
     public static final double SHOOTER_STABILIZATION_TIME = 0.3;   // Seconds to wait for speed stabilization (reduced from 1.0)

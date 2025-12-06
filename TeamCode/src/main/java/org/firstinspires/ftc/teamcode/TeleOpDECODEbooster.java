@@ -23,6 +23,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 import android.util.Size;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 
 @Disabled
 @Config
