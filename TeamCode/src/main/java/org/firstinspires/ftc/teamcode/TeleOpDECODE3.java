@@ -24,6 +24,7 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import android.util.Size;
 
+@Disabled
 @Config
 @TeleOp(name = "TeleOpDECODESimple3", group = "TeleOp")
 public class TeleOpDECODE3 extends LinearOpMode {
