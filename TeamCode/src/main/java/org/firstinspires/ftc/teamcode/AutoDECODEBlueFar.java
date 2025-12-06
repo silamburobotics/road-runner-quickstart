@@ -139,7 +139,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(-115))
-                .lineToY(START_POSE.position.y + 29.0)
+                .lineToY(START_POSE.position.y + 34.0)
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement

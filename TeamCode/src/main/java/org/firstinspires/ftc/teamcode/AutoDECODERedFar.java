@@ -139,7 +139,7 @@ public class AutoDECODERedFar extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(115))  // Mirror: -115 becomes +115
-                .lineToY(START_POSE.position.y - 29.0)  // Mirror: +30 becomes -29
+                .lineToY(START_POSE.position.y - 34.0)  // Mirror: +30 becomes -29
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after forward movement
                     intake.setPower(0);

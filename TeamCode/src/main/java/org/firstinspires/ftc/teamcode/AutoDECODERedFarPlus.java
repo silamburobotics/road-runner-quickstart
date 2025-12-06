@@ -139,7 +139,7 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(115))  // Mirror: -115 becomes +115
-                .lineToY(START_POSE.position.y - 29.0)  // Mirror: +30 becomes -29
+                .lineToY(START_POSE.position.y - 34.0)  // Mirror: +30 becomes -29
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after forward movement
                     intake.setPower(0);
@@ -164,7 +164,7 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(112))  // Mirror: -115 becomes +115
-                .lineToY(START_POSE.position.y - 18.0)  // Mirror: +30 becomes -29
+                .lineToY(START_POSE.position.y - 23.0)  // Mirror: +30 becomes -29
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after forward movement
                     intake.setPower(0);
