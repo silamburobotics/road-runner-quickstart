@@ -85,6 +85,13 @@ public class IndexerTest extends LinearOpMode {
         
         freeSpinIndexor();
         
+        // Calculate indexer correction after free spin
+        double currentPosition = indexor.getCurrentPosition();
+        double indexerCorrection = 0.0;
+        if (currentPosition > IndexerPreviousPosition + 5) {
+            indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+        }
+        
         // WAIT FOR BUTTON PRESS: Display current state and wait for user input
         telemetry.addData("✅ PHASE 2", "Complete - Free spin finished");
         telemetry.addData("", "");
@@ -93,6 +100,7 @@ public class IndexerTest extends LinearOpMode {
         telemetry.addData("📌 Indexer Previous Position", "%.1f ticks", IndexerPreviousPosition);
         telemetry.addData("🎯 Next Target Position", "%.1f ticks", IndexerPreviousPosition + INDEXOR_TICKS);
         telemetry.addData("📊 Position Difference", "%d ticks", indexor.getCurrentPosition() - (int)IndexerPreviousPosition);
+        telemetry.addData("🔧 Indexer Correction", "%.1f ticks", indexerCorrection);
         telemetry.addData("", "");
         telemetry.addData("⏸️ WAITING", "Press A button to continue with Phase 3");
         telemetry.update();
@@ -100,6 +108,12 @@ public class IndexerTest extends LinearOpMode {
         // Wait for A button press
         while (opModeIsActive() && !gamepad1.a) {
             // Update display in case position changes
+            currentPosition = indexor.getCurrentPosition();
+            indexerCorrection = 0.0;
+            if (currentPosition > IndexerPreviousPosition + 5) {
+                indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+            }
+            
             telemetry.addData("✅ PHASE 2", "Complete - Free spin finished");
             telemetry.addData("", "");
             telemetry.addData("=== CURRENT STATE ===", "");
@@ -107,6 +121,7 @@ public class IndexerTest extends LinearOpMode {
             telemetry.addData("📌 Indexer Previous Position", "%.1f ticks", IndexerPreviousPosition);
             telemetry.addData("🎯 Next Target Position", "%.1f ticks", IndexerPreviousPosition + INDEXOR_TICKS);
             telemetry.addData("📊 Position Difference", "%d ticks", indexor.getCurrentPosition() - (int)IndexerPreviousPosition);
+            telemetry.addData("🔧 Indexer Correction", "%.1f ticks", indexerCorrection);
             telemetry.addData("", "");
             telemetry.addData("⏸️ WAITING", "Press A button to continue with Phase 3");
             telemetry.update();
