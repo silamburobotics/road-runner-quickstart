@@ -144,7 +144,8 @@ public class AutoDECODEBlueNearPlus extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(-133))
-                .lineToY(START_POSE.position.y + 29.0) //29.0
+                //.lineToY(START_POSE.position.y + 29.0) //29.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE + 5.0, START_POSE.position.y + 29.0), Math.toRadians(-133)) //10.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement
@@ -184,6 +185,8 @@ public class AutoDECODEBlueNearPlus extends LinearOpMode {
         telemetry.update();
         
         waitForShooterSpeed();
+
+        sleep(1000);
         
         fireShot(1);
         moveIndexorToNextPosition();
