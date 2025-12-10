@@ -159,6 +159,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // AprilTag alignment settings
     public static final double ALIGNMENT_TURN_POWER = 0.3;    // Power for alignment turns
+    public static final double ALIGNMENT_TURN_VELOCITY = 300.0; // Velocity for alignment turns (ticks/sec)
     public static final double ALIGNMENT_TOLERANCE = 2.0;      // Degrees tolerance for "aligned"
     public static final double ALIGNMENT_TIMEOUT = 1.0;        // Maximum time for alignment attempt (seconds)
     private boolean alignmentActive = false;
