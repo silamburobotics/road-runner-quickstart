@@ -61,7 +61,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Blue alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1200;      // Range: 1200-1800 ticks/sec (Blue back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1190;      // Range: 1200-1800 ticks/sec (Blue back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
@@ -152,7 +152,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
                 
                 .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 3.0, START_POSE.position.y), Math.toRadians(-133)) //10.0
                 .setTangent(Math.toRadians(-133))
-                .lineToY(START_POSE.position.y + 29.0) //29.0
+                .lineToY(START_POSE.position.y + 31.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement
@@ -191,7 +191,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
         telemetry.update();
         
-        sleep(4000);
+        sleep(5000);
         waitForShooterSpeed();
         
         fireShot(1);
@@ -421,7 +421,8 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         if (currentPosition>targetPosition)
         {
-            targetPosition = currentPosition+(INDEXOR_TICKS*2)-(currentPosition % INDEXOR_TICKS);
+            double indexerCorrection = (currentPosition % INDEXOR_TICKS);
+            targetPosition = currentPosition+(INDEXOR_TICKS*2)-indexerCorrection;
         }
 
         IndexerPreviousPosition = targetPosition;
