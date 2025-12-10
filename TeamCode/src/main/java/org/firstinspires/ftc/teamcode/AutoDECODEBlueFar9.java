@@ -375,6 +375,16 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         
         ElapsedTime indexorTimer = new ElapsedTime();
         indexorTimer.reset();
+        
+        // Wait for indexor to reach position
+        while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
+            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
+            telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
+            telemetry.addData("🔄 Indexor Status", indexor.isBusy() ? "Moving..." : "Complete");
+            telemetry.addData("⏱️ Elapsed", "%.1f / %.1f seconds", indexorTimer.seconds(), INDEXOR_MOVE_TIMEOUT);
+            telemetry.update();
+            sleep(50);
+        }
 
         // Stop indexor
         indexor.setPower(0);
