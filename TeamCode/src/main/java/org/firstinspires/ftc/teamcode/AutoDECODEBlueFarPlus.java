@@ -43,7 +43,7 @@ public class AutoDECODEBlueFarPlus extends LinearOpMode {
     private static final Pose2d START_POSE = new Pose2d(12.0, 108.0, 0.0); // Starting pose for Road Runner (back position)
 
     // Motor power settings
-    public static final double INTAKE_POWER = 0.8;
+    public static final double INTAKE_POWER = 0.5;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement
     public static final double SHOOTER_POWER = 1.0;
