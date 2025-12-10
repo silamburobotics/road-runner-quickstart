@@ -91,6 +91,7 @@ public class IndexerTest extends LinearOpMode {
         telemetry.addData("=== CURRENT STATE ===", "");
         telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
         telemetry.addData("📌 Indexer Previous Position", "%.1f ticks", IndexerPreviousPosition);
+        telemetry.addData("🎯 Next Target Position", "%.1f ticks", IndexerPreviousPosition + INDEXOR_TICKS);
         telemetry.addData("📊 Position Difference", "%d ticks", indexor.getCurrentPosition() - (int)IndexerPreviousPosition);
         telemetry.addData("", "");
         telemetry.addData("⏸️ WAITING", "Press A button to continue with Phase 3");
@@ -104,6 +105,7 @@ public class IndexerTest extends LinearOpMode {
             telemetry.addData("=== CURRENT STATE ===", "");
             telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
             telemetry.addData("📌 Indexer Previous Position", "%.1f ticks", IndexerPreviousPosition);
+            telemetry.addData("🎯 Next Target Position", "%.1f ticks", IndexerPreviousPosition + INDEXOR_TICKS);
             telemetry.addData("📊 Position Difference", "%d ticks", indexor.getCurrentPosition() - (int)IndexerPreviousPosition);
             telemetry.addData("", "");
             telemetry.addData("⏸️ WAITING", "Press A button to continue with Phase 3");
