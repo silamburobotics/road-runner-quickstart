@@ -83,7 +83,7 @@ public class TeleOpDECODE extends LinearOpMode {
     
     // Shooter variables
     private boolean shooterRunning = false;
-    private double currentShooterVelocity = 1300;  // Default velocity
+    private double currentShooterVelocity = 1250;  // Default velocity
     private ElapsedTime shooterStabilizationTimer = new ElapsedTime(); // Timer for speed stabilization
     private boolean shooterSpeedStable = false; // Track if speed is stable
     private ElapsedTime boostTimer = new ElapsedTime(); // Timer for voltage boost
@@ -98,7 +98,7 @@ public class TeleOpDECODE extends LinearOpMode {
     private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
 
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1250;  // B button velocity
     public static final double SHOOTER_TARGET_VELOCITY_1600 = 1500;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
@@ -983,14 +983,6 @@ public class TeleOpDECODE extends LinearOpMode {
     private void updateSpeedLight() {
         if (!shooterRunning) {
             // Shooter is off - speed light should be off
-            speedLight.setPosition(LIGHT_OFF_POSITION);
-            return;
-        }
-        
-        // Only show green LED for far shooting (1600 velocity / Y button)
-        // Green LED is disabled for near shooting (1300 velocity / B button)
-        if (Math.abs(currentShooterVelocity - SHOOTER_TARGET_VELOCITY_1300) < 50) {
-            // Near shooting mode (1300 velocity) - LED always off
             speedLight.setPosition(LIGHT_OFF_POSITION);
             return;
         }
