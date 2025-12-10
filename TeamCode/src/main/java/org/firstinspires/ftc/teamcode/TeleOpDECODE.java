@@ -789,14 +789,7 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // 1) Check if shooter is running at target velocity
-        if (!shooterRunning) {
-            telemetry.addData("⚠️ Trigger", "Shooter not running - use gamepad1 B/Y to set speed first");
-            telemetry.update();
-            return;
-        }
-        
-        // 2) Start trigger sequence - move to fire position
+        // Start trigger sequence - move to fire position
         triggerServo.setPosition(TRIGGER_FIRE);
         
         // Put indexer in float mode while trigger is firing
