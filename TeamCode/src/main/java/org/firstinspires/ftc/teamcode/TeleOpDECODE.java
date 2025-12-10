@@ -220,7 +220,6 @@ public class TeleOpDECODE extends LinearOpMode {
             sleep(20);
         }
     }
-    
     private void initializeMotors() {
         // Initialize motors
         indexor = hardwareMap.get(DcMotorEx.class, "indexor");
@@ -293,11 +292,11 @@ public class TeleOpDECODE extends LinearOpMode {
         conveyor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         
-        // Configure drive motors
-        leftFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightFront.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        leftBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightBack.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        // Configure drive motors for velocity control during alignment
+        leftFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightFront.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        leftBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightBack.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         
         // Set zero power behavior for drive
         leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -1270,24 +1269,28 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Calculate turn power (proportional control)
-        // P = 0.015 gives full power (0.3) at maximum expected bearing error of 20 degrees
-        double turnPower = bearingError * 0.015; // Proportional gain: 20° × 0.015 = 0.3 (full power)
-        turnPower = Math.max(-ALIGNMENT_TURN_POWER, Math.min(ALIGNMENT_TURN_POWER, turnPower));
+        // Calculate turn velocity (proportional control)
+        // Scale velocity based on bearing error: larger error = higher velocity (up to max)
+        double velocityScale = Math.abs(bearingError) / 20.0; // Scale from 0 to 1.0 based on 20° max expected error
+        velocityScale = Math.min(velocityScale, 1.0); // Cap at 1.0
+        velocityScale = Math.max(velocityScale, 0.2); // Minimum 20% velocity for small errors
         
-        // Apply turn movement (positive bearing = turn right)
-        double frontLeftPower = turnPower;
-        double frontRightPower = -turnPower;
-        double backLeftPower = turnPower;
-        double backRightPower = -turnPower;
+        double turnVelocity = ALIGNMENT_TURN_VELOCITY * velocityScale;
         
-        leftFront.setPower(backLeftPower);
-        rightFront.setPower(backRightPower);
-        leftBack.setPower(frontLeftPower);
-        rightBack.setPower(frontRightPower);
+        // Apply direction based on bearing error (positive = turn right, negative = turn left)
+        if (bearingError < 0) {
+            turnVelocity = -turnVelocity;
+        }
+        
+        // Apply turn movement using velocity control
+        // Positive velocity = turn right (left wheels forward, right wheels backward)
+        leftFront.setVelocity(turnVelocity);
+        rightFront.setVelocity(-turnVelocity);
+        leftBack.setVelocity(turnVelocity);
+        rightBack.setVelocity(-turnVelocity);
         
         telemetry.addData("🎯 ALIGNING", "Bearing error: %.1f°", bearingError);
-        telemetry.addData("🔄 Turn Power", "%.2f", turnPower);
+        telemetry.addData("🔄 Turn Velocity", "%.0f ticks/sec (%.0f%% of max)", turnVelocity, velocityScale * 100);
         telemetry.addData("📏 Distance", "%.1f inches", targetTag.ftcPose.range);
         telemetry.addData("⏱️ Time", "%.1f / %.1f seconds", alignmentTimer.seconds(), ALIGNMENT_TIMEOUT);
         telemetry.update();
@@ -1300,10 +1303,12 @@ public class TeleOpDECODE extends LinearOpMode {
         alignmentActive = false;
         
         // Stop all drive motors
-        leftFront.setPower(0);
-        rightFront.setPower(0);
-        leftBack.setPower(0);
-        rightBack.setPower(0);
+
+        // Stop all drive motors using velocity control
+        leftFront.setVelocity(0);
+        rightFront.setVelocity(0);
+        leftBack.setVelocity(0);
+        rightBack.setVelocity(0);
         
         telemetry.addData("✅ Alignment STOPPED", "%s", reason);
         telemetry.addData("⏱️ Total Time", "%.1f seconds", alignmentTimer.seconds());
