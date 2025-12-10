@@ -215,6 +215,28 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
 
+        // DIAGNOSTIC PAUSE: Display indexer position information after picking balls
+        double currentPosition = indexor.getCurrentPosition();
+        double indexerCorrection = 0.0;
+        if (currentPosition > IndexerPreviousPosition + 5) {
+            indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+        }
+        double nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
+        
+        telemetry.addData("✅ Trajectory 2", "Complete - Balls picked");
+        telemetry.addData("", "");
+        telemetry.addData("=== INDEXER DIAGNOSTIC ===", "");
+        telemetry.addData("📍 Current Position", "%d ticks", (int)currentPosition);
+        telemetry.addData("📌 Previous Position", "%.1f ticks", IndexerPreviousPosition);
+        telemetry.addData("🎯 Next Target Position", "%.1f ticks", nextTargetPosition);
+        telemetry.addData("🔧 Indexer Correction", "%.1f ticks", indexerCorrection);
+        telemetry.addData("📊 Position Difference", "%d ticks", (int)(currentPosition - IndexerPreviousPosition));
+        telemetry.addData("", "");
+        telemetry.addData("⏸️ PAUSED", "Review diagnostic info - Understanding backward movement");
+        telemetry.update();
+        
+        sleep(5000); // 5 second pause to review
+
         moveIndexorToNextPosition();
 
         fireShot(4);
