@@ -419,7 +419,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         // Get current position and calculate target
         double currentPosition = indexor.getCurrentPosition();
         double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        if (currentPosition>targetPosition-5)
+        if (currentPosition>targetPosition+5)
         {
             double indexerCorrection = INDEXOR_TICKS-Math.mod(currentPosition, INDEXOR_TICKS);
             targetPosition = currentPosition+indexerCorrection;
