@@ -754,7 +754,7 @@ public class TeleOpDECODE extends LinearOpMode {
         // Set target position
         indexor.setTargetPosition((int) Math.round(targetPosition));
         indexor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        indexor.setPower(INDEXOR_POWER * 0.5);  // Use half power for fine adjustments
+        indexor.setPower(INDEXOR_POWER * 0.7);  // Use half power for fine adjustments
         
         // Start timing and tracking
         indexorTimer.reset();
@@ -969,7 +969,15 @@ public class TeleOpDECODE extends LinearOpMode {
             return;
         }
         
-        // Shooter is on - check speed and stability
+        // Only show green LED for far shooting (1600 velocity / Y button)
+        // Green LED is disabled for near shooting (1300 velocity / B button)
+        if (Math.abs(currentShooterVelocity - SHOOTER_TARGET_VELOCITY_1300) < 50) {
+            // Near shooting mode (1300 velocity) - LED always off
+            speedLight.setPosition(LIGHT_OFF_POSITION);
+            return;
+        }
+        
+        // Far shooting mode (1600 velocity) - show LED status
         double currentVelocity = shooter.getVelocity();
         double speedPercentage = currentVelocity / currentShooterVelocity;
         
@@ -995,6 +1003,25 @@ public class TeleOpDECODE extends LinearOpMode {
         double drive = gamepad1.left_stick_y * DRIVE_SPEED_MULTIPLIER;
         double strafe = gamepad1.left_stick_x * STRAFE_SPEED_MULTIPLIER;
         double turn = -gamepad1.right_stick_x * TURN_SPEED_MULTIPLIER;
+        
+        // Check if all joysticks are centered (deadzone threshold)
+        boolean joysticksIdle = Math.abs(gamepad1.left_stick_y) < 0.05 && 
+                                Math.abs(gamepad1.left_stick_x) < 0.05 && 
+                                Math.abs(gamepad1.right_stick_x) < 0.05;
+        
+        if (joysticksIdle) {
+            // Set all motors to zero power and ensure BRAKE mode is active
+            leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+            
+            leftFront.setPower(0);
+            rightFront.setPower(0);
+            leftBack.setPower(0);
+            rightBack.setPower(0);
+            return;
+        }
         
         double frontLeftPower = drive + strafe + turn;
         double frontRightPower = drive - strafe - turn;
