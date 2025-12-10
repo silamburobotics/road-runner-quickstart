@@ -44,14 +44,14 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     // Motor power settings
     public static final double INTAKE_POWER = 0.5;
     public static final double CONVEYOR_POWER = 1.0;
-    public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement
+    public static final double AUTO_INDEXOR_POWER = 0.7;      // Power for automatic indexor movement (increased to 0.7 for faster advancement)
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
     // Shooter PID coefficients for velocity control (from TeleOpDECODE)
-    public static double VELOCITY_P = 4;      // Proportional coefficient
+    public static double VELOCITY_P = 6.0;    // Proportional coefficient (increased from 4 for faster response)
     public static double VELOCITY_I = 0.15;   // Integral coefficient
-    public static double VELOCITY_D = 0.3;    // Derivative coefficient
+    public static double VELOCITY_D = 0.5;    // Derivative coefficient (increased from 0.3 for better damping)
     public static double VELOCITY_F = 13.0;   // Feedforward coefficient
     
     // Voltage boost settings
@@ -68,7 +68,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     
     // Speed stabilization settings
     public static final double SHOOTER_SPEED_TOLERANCE = 25;    // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 0.3; // Seconds to wait for speed stabilization between shots
+    public static final double SHOOTER_STABILIZATION_TIME = 0.2; // Seconds to wait for speed stabilization (reduced from 0.3s)
     public static final double SHOOTER_VELOCITY_CORRECTION_FACTOR = 1.02; // Slight overcorrection for consistency
     
     // Speed light control settings (using servo positions for LED control)
@@ -82,8 +82,8 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
-    public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double WAIT_BETWEEN_SHOTS = 0.3;      // Seconds to wait between shots (stabilization)
+    public static final double TRIGGER_FIRE_DURATION = 0.3;   // Seconds to stay in fire position (reduced from 0.5s)
+    public static final double WAIT_BETWEEN_SHOTS = 0.15;     // Seconds to wait between shots (reduced from 0.3s)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     public double IndexerPreviousPosition = 0.0;  // Maximum time to wait for shooter to reach speed
@@ -298,18 +298,13 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     }
     
     private void fireShot(int shotNumber) {
-        telemetry.addData("🔥 STEP 1." + shotNumber, "Firing shot %d of 3...", shotNumber);
-        telemetry.update();
-        
         // Pre-fire velocity check and correction
         double preFire = shooter.getVelocity();
         double targetDifference = Math.abs(preFire - SHOOTER_TARGET_VELOCITY);
         
         if (targetDifference > SHOOTER_SPEED_TOLERANCE) {
-            telemetry.addData("🔧 PRE-FIRE", "Correcting velocity: %.0f → %.0f", preFire, SHOOTER_TARGET_VELOCITY);
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
-            telemetry.update();
-            sleep(200); // Brief stabilization
+            sleep(100); // Brief stabilization (reduced from 200ms)
         }
         
         // Move trigger to fire position
@@ -318,45 +313,20 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         ElapsedTime fireTimer = new ElapsedTime();
         fireTimer.reset();
         
-        // Wait for fire duration with velocity monitoring
+        // Wait for fire duration with velocity monitoring (optimized)
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
             // Continuously reapply shooter velocity to maintain consistent speed
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
-            
-            double currentVelocity = shooter.getVelocity();
-            double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
-            double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
-            
-            telemetry.addData("🎯 Shot", "%d of 3", shotNumber);
-            telemetry.addData("💥 Trigger", "FIRE position");
-            telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
-            telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
-            telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
-            
-            telemetry.update();
-            sleep(50);
+            sleep(10);  // Reduced from 50ms for faster response
         }
-        //Trigger intermittent firing
-        triggerServo.setPosition(0.25);
-        triggerServo.setPosition(TRIGGER_FIRE);
-        sleep(50);
         // Return trigger to home position
         triggerServo.setPosition(TRIGGER_HOME);
-        
-        // Post-fire velocity check
-        double postFire = shooter.getVelocity();
-        telemetry.addData("✅ Shot %d", "Fired successfully!", shotNumber);
-        telemetry.addData("📊 Post-Fire Speed", "%.0f ticks/sec", postFire);
-        telemetry.update();
         
         // Wait between shots
         sleep((long)(WAIT_BETWEEN_SHOTS * 1000));
     }
     
     private void moveIndexorToNextPosition() {
-        telemetry.addData("🔄 INDEXOR", "Moving to next position...");
-        telemetry.update();
-        
         // Get current position and calculate target
         double currentPosition = indexor.getCurrentPosition();
         double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
@@ -376,14 +346,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         ElapsedTime indexorTimer = new ElapsedTime();
         indexorTimer.reset();
         
-        // Wait for indexor to reach position
+        // Wait for indexor to reach position (optimized for speed)
         while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
-            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
-            telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
-            telemetry.addData("🔄 Indexor Status", indexor.isBusy() ? "Moving..." : "Complete");
-            telemetry.addData("⏱️ Elapsed", "%.1f / %.1f seconds", indexorTimer.seconds(), INDEXOR_MOVE_TIMEOUT);
-            telemetry.update();
-            sleep(50);
+            sleep(10);  // Reduced from 50ms to 10ms for faster response
         }
 
         // Stop indexor
