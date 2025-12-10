@@ -421,7 +421,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         if (currentPosition>targetPosition)
         {
-            targetPosition = currentPosition+INDEXOR_TICKS*2-(currentPosition % INDEXOR_TICKS);
+            targetPosition = currentPosition+(INDEXOR_TICKS*2)-(currentPosition % INDEXOR_TICKS);
         }
 
         IndexerPreviousPosition = targetPosition;
