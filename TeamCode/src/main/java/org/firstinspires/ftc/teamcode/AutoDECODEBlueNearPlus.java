@@ -143,10 +143,10 @@ public class AutoDECODEBlueNearPlus extends LinearOpMode {
                     indexor.setPower(AUTO_INDEXOR_POWER);
                     return false;
                 })
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE + 1.0, START_POSE.position.y), Math.toRadians(-133)) //10.0
                 .setTangent(Math.toRadians(-133))
-                //.lineToY(START_POSE.position.y + 29.0) //29.0
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE + 1.0, START_POSE.position.y + 29.0), Math.toRadians(-133)) //10.0
-
+                .lineToY(START_POSE.position.y + 29.0) //29.0
+                
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement
                     intake.setPower(0);
