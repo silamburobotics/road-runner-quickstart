@@ -48,6 +48,16 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
+    // Shooter PID coefficients for velocity control (from TeleOpDECODE)
+    public static double VELOCITY_P = 4;      // Proportional coefficient
+    public static double VELOCITY_I = 0.15;   // Integral coefficient
+    public static double VELOCITY_D = 0.3;    // Derivative coefficient
+    public static double VELOCITY_F = 13.0;   // Feedforward coefficient
+    
+    // Voltage boost settings
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.25;    // 25% voltage boost for startup
+    public static final double BOOST_DURATION = 0.3;                // 300 milliseconds boost duration
+    
     // Indexor position settings
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
@@ -72,7 +82,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
-    public static final double TRIGGER_FIRE_DURATION = 0.2;   // Seconds to stay in fire position
+    public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
     public static final double WAIT_BETWEEN_SHOTS = 0.3;      // Seconds to wait between shots (stabilization)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
@@ -194,15 +204,32 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         telemetry.addData("🚀 STEP 1", "Starting shooter system...");
         telemetry.update();
         
-        // Start shooter with optimized velocity control for consistency
-        double initialVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-        shooter.setVelocity(initialVelocity);
+        // Start shooter with voltage boost for faster spin-up
+        double boostedVelocity = SHOOTER_TARGET_VELOCITY * BOOST_VOLTAGE_MULTIPLIER;
+        shooter.setVelocity(boostedVelocity);
         
         // Start shooter servo
         shooterServo.setPower(SHOOTER_SERVO_POWER);
         
         // Start conveyor to help feed balls
         conveyor.setPower(CONVEYOR_POWER);
+        
+        telemetry.addData("✅ Shooter", "Started with BOOST: %.0f ticks/sec", boostedVelocity);
+        telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
+        telemetry.update();
+        
+        // Wait for boost duration, then return to normal velocity
+        ElapsedTime boostTimer = new ElapsedTime();
+        boostTimer.reset();
+        
+        while (opModeIsActive() && boostTimer.seconds() < BOOST_DURATION) {
+            sleep(50);
+        }
+        
+        // Return to normal velocity after boost
+        shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
+        telemetry.addData("✅ Boost Complete", "Normal velocity: %.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
+        telemetry.update();
     }
     
     private void waitForShooterSpeed() {
@@ -379,6 +406,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         conveyor = hardwareMap.get(DcMotorEx.class, "conveyor");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        
+        // Set custom PID coefficients for shooter velocity control
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
         
         // Initialize servos
         shooterServo = hardwareMap.get(CRServo.class, "shooterServo");
