@@ -51,6 +51,12 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
+    // Shooter PID coefficients for velocity control (from TeleOpDECODE)
+    public static double VELOCITY_P = 4;      // Proportional coefficient
+    public static double VELOCITY_I = 0.15;   // Integral coefficient
+    public static double VELOCITY_D = 0.3;    // Derivative coefficient
+    public static double VELOCITY_F = 13.0;   // Feedforward coefficient
+    
     // Indexor position settings
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
@@ -144,8 +150,8 @@ public class AutoDECODEBlueNear extends LinearOpMode {
                     return false;
                 })
                 
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 3.0, START_POSE.position.y), Math.toRadians(-133)) //10.0
                 .setTangent(Math.toRadians(-133))
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 2.0, START_POSE.position.y), Math.toRadians(-133)) //10.0
                 .lineToY(START_POSE.position.y + 29.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
@@ -506,6 +512,9 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         conveyor = hardwareMap.get(DcMotorEx.class, "conveyor");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        
+        // Set custom PID coefficients for shooter velocity control
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
         
         // Initialize servos
         shooterServo = hardwareMap.get(CRServo.class, "shooterServo");
