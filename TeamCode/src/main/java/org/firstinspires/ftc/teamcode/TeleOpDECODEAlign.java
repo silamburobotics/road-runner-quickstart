@@ -118,7 +118,7 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     public static final double BOOST_DURATION = 0.5;                // 400 milliseconds boost duration
     
     // Motor power settings
-    public static final double INTAKE_POWER = 0.8;
+    public static final double INTAKE_POWER = 1.0;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double INDEXOR_POWER = 0.7;
     public static final double SHOOTER_SERVO_POWER = 1.0;
