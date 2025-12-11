@@ -407,10 +407,14 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         
         // Get current position and calculate target
         double currentPosition = indexor.getCurrentPosition();
-        double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        if (currentPosition>targetPosition)
+        
+        if (currentPosition>(IndexerPreviousPosition + INDEXOR_TICKS))
         {
             targetPosition = currentPosition+INDEXOR_TICKS*2-(currentPosition % INDEXOR_TICKS);
+        }
+        else
+        {
+            targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         }
 
         IndexerPreviousPosition = targetPosition;
