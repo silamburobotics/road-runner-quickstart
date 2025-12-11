@@ -47,7 +47,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double INTAKE_POWER = 0.5;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement (increased to 0.7 for faster advancement)
-    public static double INDEXOR_INTAKE_VELOCITY = 200.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
+    public static double INDEXOR_INTAKE_VELOCITY = 350.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -65,7 +65,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Blue alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1460;      // Range: 1200-1800 ticks/sec (Blue back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1500;      // Range: 1200-1800 ticks/sec (Blue back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     

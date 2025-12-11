@@ -49,6 +49,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.6;      // Increased from 0.3 for faster movement
+    public static double INDEXOR_INTAKE_VELOCITY = 350.0;     // Indexor velocity during intake (ticks/sec) - tunable for optimal intake
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -152,7 +153,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                 .afterTime(0, (telemetryPacket) -> {
                     // Start indexor only - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    indexor.setPower(AUTO_INDEXOR_POWER);
+                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
                 
@@ -162,7 +163,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
-                    indexor.setPower(0);
+                    indexor.setVelocity(0);
                     return false;
                 })
                 .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
