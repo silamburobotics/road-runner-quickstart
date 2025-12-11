@@ -99,7 +99,7 @@ public class TeleOpDECODEAlign extends LinearOpMode {
 
     // Shooter velocity settings
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1560;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1530;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
     public static double VELOCITY_P = 6.0;  // Proportional coefficient (increased for faster response on restart)
