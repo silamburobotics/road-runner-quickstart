@@ -173,7 +173,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         startShooterSystem();
         
         // Start intake and conveyor - keep them running throughout
-        intake.setPower(INTAKE_POWER);
+        intake.setPower(AUTO_INDEXOR_POWER);
         conveyor.setPower(CONVEYOR_POWER);
         
         Actions.runBlocking(trajectory1);

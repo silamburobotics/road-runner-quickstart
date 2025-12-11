@@ -156,7 +156,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.5, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
                 .setTangent(Math.toRadians(-134))
                 .lineToY(START_POSE.position.y + 31.0) //29.0
 
@@ -165,7 +165,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     indexor.setPower(0);
                     return false;
                 })
-                .lineToYSplineHeading(START_POSE.position.y-3, Math.toRadians(0))
+                .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
                 .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
@@ -186,7 +186,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
         startShooterSystem();
         
         // Start intake and conveyor - keep them running throughout
-        intake.setPower(INTAKE_POWER);
+        intake.setPower(AUTO_INDEXOR_POWER);
         conveyor.setPower(CONVEYOR_POWER);
         
         // Step 1: Execute Trajectory 1 (move to shooting position)
