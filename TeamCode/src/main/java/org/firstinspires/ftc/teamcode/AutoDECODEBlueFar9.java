@@ -57,8 +57,8 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static double VELOCITY_F = 13.0;   // Feedforward coefficient
     
     // Voltage boost settings
-    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.25;    // 25% voltage boost for startup
-    public static final double BOOST_DURATION = 0.3;                // 300 milliseconds boost duration
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.35;    // 25% voltage boost for startup
+    public static final double BOOST_DURATION = 0.4;                // 300 milliseconds boost duration
     
     // Indexor position settings
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
@@ -115,16 +115,14 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         // Trajectory 1: Initial movement (if needed - currently staying at start)
         // You can modify this to move to a specific shooting position
         trajectory1 = drive.actionBuilder(START_POSE)
-                .waitSeconds(0.1)  // Placeholder - replace with actual movement if needed
+                .waitSeconds(0.3)  // Placeholder - replace with actual movement if needed
                 .build();
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(START_POSE)
                 .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(-115))
                 .afterTime(0, (telemetryPacket) -> {
-                    // Start intake system during rearward movement
-                    intake.setPower(INTAKE_POWER);
-                    conveyor.setPower(CONVEYOR_POWER);
+                    // Start indexor only - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     indexor.setPower(AUTO_INDEXOR_POWER);
                     return false;
@@ -133,9 +131,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                 .lineToY(START_POSE.position.y + 35.0) // 29.0
 
                .stopAndAdd((telemetryPacket) -> {
-                    // Stop intake system after rearward movement
-                    intake.setPower(0);
-                    conveyor.setPower(0);
+                    // Stop indexor only - keep intake and conveyor running
                     indexor.setPower(0);
                     return false;
                 })
@@ -149,9 +145,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                 //.lineToXSplineHeading(START_POSE.position.x + 54.0, Math.toRadians(-115))
                 .splineToLinearHeading(new Pose2d(START_POSE.position.x+49,START_POSE.position.y-5,Math.toRadians(-112)),0)
                 .afterTime(0, (telemetryPacket) -> {
-                    // Start intake system during rearward movement
-                    intake.setPower(INTAKE_POWER);
-                    conveyor.setPower(CONVEYOR_POWER);
+                    // Start indexor only - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     indexor.setPower(AUTO_INDEXOR_POWER);
                     return false;
@@ -160,9 +154,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                 .lineToY(START_POSE.position.y + 25.0) //18.0
 
                 .stopAndAdd((telemetryPacket) -> {
-                    // Stop intake system after rearward movement
-                    intake.setPower(0);
-                    conveyor.setPower(0);
+                    // Stop indexor only - keep intake and conveyor running
                     indexor.setPower(0);
                     return false;
                 })
@@ -177,10 +169,16 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     }
     
     private void executeAutonomousSequence() {
-
+        // Start shooter immediately - it will spin up during trajectory1 execution
+        startShooterSystem();
+        
+        // Start intake and conveyor - keep them running throughout
+        intake.setPower(INTAKE_POWER);
+        conveyor.setPower(CONVEYOR_POWER);
+        
         Actions.runBlocking(trajectory1);
         
-        startShooterSystem();
+        // Shooter should be ready or nearly ready by now
         waitForShooterSpeed();
         
         fireShot(1);
@@ -195,7 +193,6 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
         ranTrajectory2 = true;
-        double currentPosition = indexor.getCurrentPosition();
 
         moveIndexorToNextPosition();
         fireShot(4);
@@ -311,7 +308,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
             }
             
             // If speed is stable for a reasonable time, we can exit early
-            if (speedStable && stabilizationTimer.seconds() > 0.5) {
+            if (speedStable && stabilizationTimer.seconds() > 0.3) {
                 telemetry.addData("✅ STABILIZED", "Shooter speed consistent!");
                 telemetry.update();
                 return;
@@ -372,7 +369,6 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
             // Set indexor to run to position
         indexor.setTargetPosition((int)targetPosition);
         indexor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        conveyor.setPower(CONVEYOR_POWER);
         indexor.setPower(AUTO_INDEXOR_POWER);
         
         ElapsedTime indexorTimer = new ElapsedTime();
@@ -383,11 +379,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
             sleep(10);  // Reduced from 50ms to 10ms for faster response
         }
 
-        // Stop indexor
+        // Stop indexor - conveyor keeps running
         indexor.setPower(0);
         indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        conveyor.setPower(0);
     }
     
     private void stopShooterSystem() {
