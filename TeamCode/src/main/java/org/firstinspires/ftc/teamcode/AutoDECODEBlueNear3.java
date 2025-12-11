@@ -38,6 +38,7 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
     private Action trajectory2;
     private Action trajectoryCloseOut;
 
+    public boolean ranTrajectory2 = false;
 
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
@@ -218,6 +219,7 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
+        ranTrajectory2 = true;
 
         moveIndexorToNextPosition();
 
@@ -422,11 +424,22 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         
         // Get current position and calculate target
         double currentPosition = indexor.getCurrentPosition();
-        double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        if (Math.abs(currentPosition)>Math.abs(targetPosition))
-        {
-            double indexerCorrection = INDEXOR_TICKS-Math.abs(currentPosition % INDEXOR_TICKS);
-            targetPosition = currentPosition+indexerCorrection+INDEXOR_TICKS;
+        double targetPosition;
+        
+        if (ranTrajectory2) {
+            double correction = currentPosition % INDEXOR_TICKS;
+            targetPosition = currentPosition + INDEXOR_TICKS - correction;
+
+            telemetry.addData("🎯 Target Position", "%.1f ticks", targetPosition);
+            telemetry.addData("📍 Current Position", "%.1f ticks", (double)currentPosition);
+            telemetry.addData("📍 Correction", "%.1f ticks", correction);
+            telemetry.addData("📊 Calculation", "%.1f + %.1f - %.1f = %.1f", 
+                (double)currentPosition, INDEXOR_TICKS, correction, targetPosition);
+            telemetry.update();
+
+            ranTrajectory2 = false;
+        } else {
+            targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         }
 
         IndexerPreviousPosition = targetPosition;

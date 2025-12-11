@@ -36,6 +36,8 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
     private Action trajectory2;
     private Action trajectoryCloseOut;
 
+    public boolean ranTrajectory2 = false;
+
     // Alliance and position configuration
     private static final String ALLIANCE = "RED";
     private static final String POSITION = "BACK";
@@ -217,6 +219,7 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
         
         // Execute trajectory 2
         Actions.runBlocking(trajectory2);
+        ranTrajectory2 = true;
 
         
         telemetry.addData("✅ Trajectory 2", "Complete");
@@ -418,10 +421,21 @@ public class AutoDECODERedFarPlus extends LinearOpMode {
         
         // Get current position and calculate target
         double currentPosition = indexor.getCurrentPosition();
-        double targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        if (currentPosition>targetPosition)
-        {
-            targetPosition = currentPosition+INDEXOR_TICKS*2-(currentPosition % INDEXOR_TICKS);
+        double targetPosition;
+        
+        // If we just ran trajectory2, correct for any backward movement
+        if (ranTrajectory2) {
+            double correction = currentPosition % INDEXOR_TICKS;
+            targetPosition = currentPosition + INDEXOR_TICKS - correction;
+            ranTrajectory2 = false;
+            
+            telemetry.addData("🔧 Correction Applied", "After trajectory2");
+            telemetry.addData("Current Position", "%.1f ticks", currentPosition);
+            telemetry.addData("Correction", "%.1f ticks", correction);
+            telemetry.addData("New Target", "%.1f ticks", targetPosition);
+            telemetry.update();
+        } else {
+            targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         }
 
         IndexerPreviousPosition = targetPosition;
