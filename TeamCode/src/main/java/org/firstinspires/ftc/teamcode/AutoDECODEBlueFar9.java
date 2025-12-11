@@ -180,6 +180,8 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         
         // Shooter should be ready or nearly ready by now
         waitForShooterSpeed();
+
+        sleep(2000);
         
         fireShot(1);
         moveIndexorToNextPosition();
@@ -196,6 +198,8 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         // Diagnostic: Check indexer position after trajectory2
         int positionAfterTrajectory2 = indexor.getCurrentPosition();
 
+                sleep(2000);
+
         moveIndexorToNextPosition();
         fireShot(4);
 
@@ -208,7 +212,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         fireShot(6);
         moveIndexorToNextPosition();
 
-        Actions.runBlocking(trajectoryCloseOut);
+       /* Actions.runBlocking(trajectoryCloseOut);
         ranTrajectory2 = true;
 
         positionAfterTrajectory2 = indexor.getCurrentPosition();
@@ -220,7 +224,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
 
         fireShot(8);
 
-        moveIndexorToNextPosition();
+        moveIndexorToNextPosition();*/
 
         Actions.runBlocking(trajectoryCloseOutFinal);
 
