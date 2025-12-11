@@ -83,7 +83,7 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     
     // Shooter variables
     private boolean shooterRunning = false;
-    private double currentShooterVelocity = 1250;  // Default velocity
+    private double currentShooterVelocity = 1300;  // Default velocity
     private ElapsedTime shooterStabilizationTimer = new ElapsedTime(); // Timer for speed stabilization
     private boolean shooterSpeedStable = false; // Track if speed is stable
     private ElapsedTime boostTimer = new ElapsedTime(); // Timer for voltage boost
@@ -98,8 +98,8 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
 
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1230;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1500;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1600;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
     public static double VELOCITY_P = 6.0;  // Proportional coefficient (increased for faster response on restart)
@@ -140,8 +140,9 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     
     // Speed light control settings (using servo positions for LED control)
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
-    public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light
-    public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
+    public static final double LIGHT_WHITE_POSITION = 0.33;   // Servo position for white light (low speed)
+    public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light (in tolerance)
+    public static final double LIGHT_BLUE_POSITION = 1.0;     // Servo position for blue light (high speed)
     
     // Indexor stuck detection
     public static final double INDEXOR_STUCK_TIMEOUT = 0.5;  // 0.5 seconds as specified
@@ -153,9 +154,9 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     public static final double OPTIMAL_SHOOTING_DISTANCE = 24.0; // inches
     
     // Mecanum drive settings
-    public static final double DRIVE_SPEED_MULTIPLIER = 0.8;
-    public static final double STRAFE_SPEED_MULTIPLIER = 0.8;
-    public static final double TURN_SPEED_MULTIPLIER = 0.6;
+    public static final double DRIVE_SPEED_MULTIPLIER = 0.7;
+    public static final double STRAFE_SPEED_MULTIPLIER = 0.7;
+    public static final double TURN_SPEED_MULTIPLIER = 0.5;
     
     // AprilTag alignment settings
     public static final double ALIGNMENT_TURN_VELOCITY = 300.0; // Velocity (ticks/sec) for alignment turns
@@ -889,11 +890,20 @@ public class TeleOpDECODEAlign extends LinearOpMode {
         double currentVelocity = shooter.getVelocity();
         double speedPercentage = currentVelocity / currentShooterVelocity;
         
+        // Green: Speed is stable and within tolerance range
         if (shooterSpeedStable && speedPercentage > SHOOTER_SPEED_THRESHOLD) {
             speedLight.setPosition(LIGHT_GREEN_POSITION);
-        } else if (speedPercentage > SHOOTER_MIN_SPEED_THRESHOLD) {
+        }
+        // Blue: High speed mode (1600 target velocity)
+        else if (currentShooterVelocity >= SHOOTER_TARGET_VELOCITY_1600) {
+            speedLight.setPosition(LIGHT_BLUE_POSITION);
+        }
+        // White: Low speed mode (1300 target velocity)
+        else if (currentShooterVelocity >= SHOOTER_TARGET_VELOCITY_1300) {
             speedLight.setPosition(LIGHT_WHITE_POSITION);
-        } else {
+        }
+        // Off: Speed too low
+        else {
             speedLight.setPosition(LIGHT_OFF_POSITION);
         }
     }
