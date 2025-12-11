@@ -146,7 +146,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
-                .turnTo(Math.toRadians(-133))
+                .turnTo(Math.toRadians(-134))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start intake system during rearward movement
                     intake.setPower(INTAKE_POWER);
@@ -156,9 +156,9 @@ public class AutoDECODEBlueNear extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-133)) //10.0
-                .setTangent(Math.toRadians(-133))
-                .lineToY(START_POSE.position.y + 29.0) //29.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
+                .setTangent(Math.toRadians(-134))
+                .lineToY(START_POSE.position.y + 31.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement
@@ -242,7 +242,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         telemetry.addData("⏸️ PAUSED", "Review diagnostic info - Understanding backward movement");
         telemetry.update();
         
-        sleep(5000); // 5 second pause to review
+        //sleep(5000); // 5 second pause to review
 
         moveIndexorToNextPosition();
 
