@@ -153,9 +153,9 @@ public class TeleOpDECODE extends LinearOpMode {
     public static final double OPTIMAL_SHOOTING_DISTANCE = 24.0; // inches
     
     // Mecanum drive settings
-    public static final double DRIVE_SPEED_MULTIPLIER = 0.8;
-    public static final double STRAFE_SPEED_MULTIPLIER = 0.8;
-    public static final double TURN_SPEED_MULTIPLIER = 0.6;
+    public static final double DRIVE_SPEED_MULTIPLIER = 0.7;
+    public static final double STRAFE_SPEED_MULTIPLIER = 0.7;
+    public static final double TURN_SPEED_MULTIPLIER = 0.5;
     
     // AprilTag alignment settings
     public static final double ALIGNMENT_TURN_POWER = 0.3;    // Power for alignment turns
