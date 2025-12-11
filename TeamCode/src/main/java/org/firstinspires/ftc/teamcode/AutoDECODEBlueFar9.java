@@ -193,6 +193,8 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
         ranTrajectory2 = true;
+        // Diagnostic: Check indexer position after trajectory2
+        int positionAfterTrajectory2 = indexor.getCurrentPosition();
 
         moveIndexorToNextPosition();
         fireShot(4);
