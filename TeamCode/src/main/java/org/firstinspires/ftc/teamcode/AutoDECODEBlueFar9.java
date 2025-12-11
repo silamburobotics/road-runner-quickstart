@@ -47,6 +47,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double INTAKE_POWER = 0.5;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement (increased to 0.7 for faster advancement)
+    public static double INDEXOR_INTAKE_VELOCITY = 200.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -122,9 +123,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         trajectory2 = drive.actionBuilder(START_POSE)
                 .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(-115))
                 .afterTime(0, (telemetryPacket) -> {
-                    // Start indexor only - intake and conveyor already running
+                    // Start indexor with velocity control - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    indexor.setPower(AUTO_INDEXOR_POWER);
+                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
                 .setTangent(Math.toRadians(-115))
@@ -132,7 +133,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
-                    indexor.setPower(0);
+                    indexor.setVelocity(0);
                     return false;
                 })
                 .lineToYSplineHeading(START_POSE.position.y+1, Math.toRadians(0))
@@ -145,9 +146,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                 //.lineToXSplineHeading(START_POSE.position.x + 54.0, Math.toRadians(-115))
                 .splineToLinearHeading(new Pose2d(START_POSE.position.x+49,START_POSE.position.y-5,Math.toRadians(-112)),0)
                 .afterTime(0, (telemetryPacket) -> {
-                    // Start indexor only - intake and conveyor already running
+                    // Start indexor with velocity control - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    indexor.setPower(AUTO_INDEXOR_POWER);
+                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
                 .setTangent(Math.toRadians(-112))
@@ -155,7 +156,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
 
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
-                    indexor.setPower(0);
+                    indexor.setVelocity(0);
                     return false;
                 })
                 .lineToYSplineHeading(START_POSE.position.y+1, Math.toRadians(0))
