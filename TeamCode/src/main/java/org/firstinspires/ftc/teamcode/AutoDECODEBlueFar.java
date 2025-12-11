@@ -210,6 +210,18 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         Actions.runBlocking(trajectory2);
         ranTrajectory2 = true;
 
+        // Diagnostic: Check indexer position after trajectory2
+        int positionAfterTrajectory2 = indexor.getCurrentPosition();
+        telemetry.addData("=== TRAJECTORY 2 COMPLETE ===", "");
+        telemetry.addData("📍 Indexer Position Before Trajectory2", "%.1f ticks", IndexerPreviousPosition);
+        telemetry.addData("📍 Indexer Position After Trajectory2", "%d ticks", positionAfterTrajectory2);
+        telemetry.addData("📊 Position Change", "%d ticks (%.1f degrees)", 
+            positionAfterTrajectory2 - (int)IndexerPreviousPosition,
+            (positionAfterTrajectory2 - IndexerPreviousPosition) * 360.0 / 537.7);
+        telemetry.addData("", "Intake moved indexer backward during ball pickup");
+        telemetry.update();
+        sleep(3000);
+
         moveIndexorToNextPosition();
 
         fireShot(4);
