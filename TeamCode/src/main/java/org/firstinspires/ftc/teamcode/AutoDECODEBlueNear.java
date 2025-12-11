@@ -234,18 +234,6 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         }
         double nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         
-        telemetry.addData("✅ Trajectory 2", "Complete - Balls picked");
-        telemetry.addData("", "");
-        telemetry.addData("=== INDEXER DIAGNOSTIC ===", "");
-        telemetry.addData("📍 Current Position", "%d ticks", (int)currentPosition);
-        telemetry.addData("📌 Previous Position", "%.1f ticks", IndexerPreviousPosition);
-        telemetry.addData("🎯 Next Target Position", "%.1f ticks", nextTargetPosition);
-        telemetry.addData("🔧 Indexer Correction", "%.1f ticks", indexerCorrection);
-        telemetry.addData("📊 Position Difference", "%d ticks", (int)(currentPosition - IndexerPreviousPosition));
-        telemetry.addData("", "");
-        telemetry.addData("⏸️ PAUSED", "Review diagnostic info - Understanding backward movement");
-        telemetry.update();
-        
         //sleep(5000); // 5 second pause to review
 
         moveIndexorToNextPosition();
