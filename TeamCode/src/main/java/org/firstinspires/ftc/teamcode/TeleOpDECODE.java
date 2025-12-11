@@ -98,8 +98,8 @@ public class TeleOpDECODE extends LinearOpMode {
     private static final double INDEXER_ADVANCE_WAIT = 0.2;  // Wait time for indexer to advance
 
     // Shooter velocity settings
-    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1230;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1500;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1300 = 1280;  // B button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1580;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
     public static double VELOCITY_P = 6.0;  // Proportional coefficient (increased for faster response on restart)
