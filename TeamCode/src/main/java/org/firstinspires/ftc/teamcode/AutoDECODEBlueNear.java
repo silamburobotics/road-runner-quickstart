@@ -191,7 +191,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
         telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
         telemetry.update();
         
-        sleep(5000);
+        sleep(3000);
         waitForShooterSpeed();
         
         fireShot(1);
