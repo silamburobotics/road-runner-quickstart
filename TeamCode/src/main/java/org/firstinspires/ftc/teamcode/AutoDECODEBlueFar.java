@@ -38,7 +38,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
     private Action trajectory2;
     private Action trajectoryCloseOut;
 
-    public boolean  ranTrajectory2 = false 
+    public boolean  ranTrajectory2 = false; 
 
 
     // Alliance and position configuration
@@ -426,6 +426,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
                 (double)currentPosition, INDEXOR_TICKS, correction, targetPosition);
 
             telemetry.update();
+
+            ranTrajectory2 = false;
 
             sleep(2000);
         }

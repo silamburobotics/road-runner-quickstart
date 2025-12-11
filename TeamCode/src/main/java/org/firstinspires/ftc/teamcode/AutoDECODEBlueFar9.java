@@ -34,6 +34,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     private Action trajectory1;
     private Action trajectory2;
     private Action trajectoryCloseOut;
+    private Action trajectoryCloseOutFinal;
 
 
     // Alliance and position configuration
@@ -168,6 +169,10 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                 .setTangent(Math.toRadians(0))
                 .lineToX(START_POSE.position.x + 2.0)
                 .build();
+
+            trajectoryCloseOutFinal = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0,START_POSE.position.y+1,0))
+                .lineToX(30)
+                .build();
     }
     
     private void executeAutonomousSequence() {
@@ -213,6 +218,8 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         moveIndexorToNextPosition();
 
         fireShot(9);
+
+        Actions.runBlocking(trajectoryCloseOutFinal);
 
     }
     
