@@ -48,7 +48,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
-    public static final double AUTO_INDEXOR_POWER = 0.3;      // Increased from 0.3 for faster movement
+    public static final double AUTO_INDEXOR_POWER = 0.6;      // Increased from 0.3 for faster movement
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -156,7 +156,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.5, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
                 .setTangent(Math.toRadians(-134))
                 .lineToY(START_POSE.position.y + 31.0) //29.0
 
@@ -165,7 +165,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     indexor.setPower(0);
                     return false;
                 })
-                .lineToYSplineHeading(START_POSE.position.y, Math.toRadians(0))
+                .lineToYSplineHeading(START_POSE.position.y-3, Math.toRadians(0))
                 .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
