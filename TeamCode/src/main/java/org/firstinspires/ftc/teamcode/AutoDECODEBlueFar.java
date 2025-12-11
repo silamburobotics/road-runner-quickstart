@@ -136,7 +136,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
                     // Start intake system during rearward movement
                     intake.setPower(INTAKE_POWER);
                     conveyor.setPower(CONVEYOR_POWER);
-                    ndexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     //indexor.setTargetPosition((int)(INDEXOR_TICKS * 10));
                     indexor.setPower(AUTO_INDEXOR_POWER);
                     return false;
