@@ -48,7 +48,7 @@ public class AutoDECODEBlueNear extends LinearOpMode {
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
-    public static final double AUTO_INDEXOR_POWER = 0.7;      // Increased from 0.3 for faster movement
+    public static final double AUTO_INDEXOR_POWER = 0.3;      // Increased from 0.3 for faster movement
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
