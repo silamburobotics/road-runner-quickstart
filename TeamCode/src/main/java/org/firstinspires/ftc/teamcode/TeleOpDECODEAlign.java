@@ -114,8 +114,8 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     public static final double SHOOTER_STABILIZATION_TIME = 0.3;   // Seconds to wait for speed stabilization
     
     // Voltage boost settings
-    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.35;    // 35% voltage boost for startup
-    public static final double BOOST_DURATION = 0.4;                // 400 milliseconds boost duration
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.45;    // 35% voltage boost for startup
+    public static final double BOOST_DURATION = 0.5;                // 400 milliseconds boost duration
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
