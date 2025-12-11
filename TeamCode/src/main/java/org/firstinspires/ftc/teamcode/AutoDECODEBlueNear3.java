@@ -58,9 +58,9 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
     public static double VELOCITY_D = 0.5;    // Derivative coefficient (increased from 0.3 for better damping)
     public static double VELOCITY_F = 13.0;   // Feedforward coefficient
     
-
-
-    
+    // Voltage boost settings
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.25;    // 25% voltage boost for startup
+    public static final double BOOST_DURATION = 0.3;                // 300 milliseconds boost duration
     
     // Indexor position settings
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
@@ -72,7 +72,7 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
     
     // Speed stabilization settings
     public static final double SHOOTER_SPEED_TOLERANCE = 25;    // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 0.5; // Seconds to wait for speed stabilization between shots
+    public static final double SHOOTER_STABILIZATION_TIME = 0.2; // Seconds to wait for speed stabilization (reduced from 0.5s)
     public static final double SHOOTER_VELOCITY_CORRECTION_FACTOR = 1.02; // Slight overcorrection for consistency
     
     // Speed light control settings (using servo positions for LED control)
@@ -86,8 +86,8 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
-    public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double WAIT_BETWEEN_SHOTS = 0.3;      // Seconds to wait between shots (stabilization)
+    public static final double TRIGGER_FIRE_DURATION = 0.3;   // Seconds to stay in fire position (reduced from 0.5s)
+    public static final double WAIT_BETWEEN_SHOTS = 0.15;     // Seconds to wait between shots (reduced from 0.3s)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     public double IndexerPreviousPosition = 0.0;  // Maximum time to wait for shooter to reach speed
@@ -196,7 +196,6 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
         telemetry.update();
         
-        sleep(3000);
         waitForShooterSpeed();
         
         fireShot(1);
@@ -219,28 +218,6 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
-
-        // DIAGNOSTIC PAUSE: Display indexer position information after picking balls
-        double currentPosition = indexor.getCurrentPosition();
-        double indexerCorrection = 0.0;
-        if (currentPosition > IndexerPreviousPosition + 5) {
-            indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
-        }
-        double nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        
-        telemetry.addData("✅ Trajectory 2", "Complete - Balls picked");
-        telemetry.addData("", "");
-        telemetry.addData("=== INDEXER DIAGNOSTIC ===", "");
-        telemetry.addData("📍 Current Position", "%d ticks", (int)currentPosition);
-        telemetry.addData("📌 Previous Position", "%.1f ticks", IndexerPreviousPosition);
-        telemetry.addData("🎯 Next Target Position", "%.1f ticks", nextTargetPosition);
-        telemetry.addData("🔧 Indexer Correction", "%.1f ticks", indexerCorrection);
-        telemetry.addData("📊 Position Difference", "%d ticks", (int)(currentPosition - IndexerPreviousPosition));
-        telemetry.addData("", "");
-        telemetry.addData("⏸️ PAUSED", "Review diagnostic info - Understanding backward movement");
-        telemetry.update();
-        
-        sleep(5000); // 5 second pause to review
 
         moveIndexorToNextPosition();
 
@@ -272,9 +249,9 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         telemetry.addData("🚀 STEP 1", "Starting shooter system...");
         telemetry.update();
         
-        // Start shooter with optimized velocity control for consistency
-        double initialVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-        shooter.setVelocity(initialVelocity);
+        // Start shooter with voltage boost
+        double boostedVelocity = SHOOTER_TARGET_VELOCITY * BOOST_VOLTAGE_MULTIPLIER;
+        shooter.setVelocity(boostedVelocity);
         
         // Start shooter servo
         shooterServo.setPower(SHOOTER_SERVO_POWER);
@@ -285,11 +262,29 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         // Set alliance indicator light
         speedLight.setPosition(LIGHT_BLUE_POSITION);
         
-        telemetry.addData("✅ Shooter", "Started at %.0f ticks/sec (corrected)", initialVelocity);
+        telemetry.addData("✅ Shooter", "Started with BOOST at %.0f ticks/sec", boostedVelocity);
         telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
+        telemetry.addData("⚡ Boost", "%.0f%% for %.1fs", (BOOST_VOLTAGE_MULTIPLIER - 1) * 100, BOOST_DURATION);
         telemetry.addData("✅ Shooter Servo", "Running at %.1f power", SHOOTER_SERVO_POWER);
         telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
         telemetry.addData("🔵 Alliance Light", "Blue indicator active");
+        telemetry.update();
+        
+        // Wait for boost duration then return to normal velocity
+        ElapsedTime boostTimer = new ElapsedTime();
+        boostTimer.reset();
+        
+        while (opModeIsActive() && boostTimer.seconds() < BOOST_DURATION) {
+            double currentVelocity = shooter.getVelocity();
+            telemetry.addData("⚡ BOOSTING", "%.1f / %.1fs", boostTimer.seconds(), BOOST_DURATION);
+            telemetry.addData("⚡ Current Speed", "%.0f ticks/sec", currentVelocity);
+            telemetry.update();
+            sleep(10);
+        }
+        
+        // Return to normal velocity after boost
+        shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
+        telemetry.addData("✅ Boost Complete", "Returning to %.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.update();
     }
     
@@ -392,10 +387,8 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         double targetDifference = Math.abs(preFire - SHOOTER_TARGET_VELOCITY);
         
         if (targetDifference > SHOOTER_SPEED_TOLERANCE) {
-            telemetry.addData("🔧 PRE-FIRE", "Correcting velocity: %.0f → %.0f", preFire, SHOOTER_TARGET_VELOCITY);
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
-            telemetry.update();
-            sleep(200); // Brief stabilization
+            sleep(100); // Brief stabilization
         }
         
         // Move trigger to fire position
@@ -406,33 +399,17 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         
         // Wait for fire duration with velocity monitoring
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
-            // Continuously reapply shooter velocity to maintain consistent speed
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
-            
-            double currentVelocity = shooter.getVelocity();
-            double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
-            double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
-            
-            telemetry.addData("🎯 Shot", "%d of 3", shotNumber);
-            telemetry.addData("💥 Trigger", "FIRE position");
-            telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
-            telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
-            telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
-            
-            telemetry.update();
-            sleep(50);
+            sleep(10);
         }
         //Trigger intermittent firing
         triggerServo.setPosition(0.25);
         triggerServo.setPosition(TRIGGER_FIRE);
-        sleep(50);
+        sleep(10);
         // Return trigger to home position
         triggerServo.setPosition(TRIGGER_HOME);
         
-        // Post-fire velocity check
-        double postFire = shooter.getVelocity();
         telemetry.addData("✅ Shot %d", "Fired successfully!", shotNumber);
-        telemetry.addData("📊 Post-Fire Speed", "%.0f ticks/sec", postFire);
         telemetry.update();
         
         // Wait between shots
@@ -465,12 +442,7 @@ public class AutoDECODEBlueNear3 extends LinearOpMode {
         
         // Wait for indexor to reach position
         while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
-            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
-            telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
-            telemetry.addData("🔄 Indexor Status", indexor.isBusy() ? "Moving..." : "Complete");
-            telemetry.addData("⏱️ Elapsed", "%.1f / %.1f seconds", indexorTimer.seconds(), INDEXOR_MOVE_TIMEOUT);
-            telemetry.update();
-            sleep(50);
+            sleep(10);
         }
 
         // Stop indexor
