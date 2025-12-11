@@ -220,7 +220,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
             (positionAfterTrajectory2 - IndexerPreviousPosition) * 360.0 / 537.7);
         telemetry.addData("", "Intake moved indexer backward during ball pickup");
         telemetry.update();
-        sleep(3000);
+        //sleep(3000);
 
         moveIndexorToNextPosition();
 
@@ -429,7 +429,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
       if (ranTrajectory2)
         {
             double correction = currentPosition % INDEXOR_TICKS;
-            targetPosition = currentPosition+INDEXOR_TICKS*2-correction;
+            targetPosition = currentPosition+INDEXOR_TICKS-correction;
 
             telemetry.addData("🎯 Target Position", "%.1f ticks", targetPosition);
             telemetry.addData("📍 Current Position", "%.1f ticks", (double)currentPosition);
@@ -441,7 +441,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
 
             ranTrajectory2 = false;
 
-            sleep(2000);
+            //sleep(2000);
         }
         else
         {
