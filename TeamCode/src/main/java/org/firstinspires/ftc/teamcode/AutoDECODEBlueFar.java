@@ -81,6 +81,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     public double IndexerPreviousPosition = 0.0;  // Maximum time to wait for shooter to reach speed
     public double targetPosition = 0.0;
+    double currentPosition = 0.0;
 
     // Road Runner trajectory settings
     public static final double FORWARD_DISTANCE = 40.0;       // Distance to move sideways (inches)
@@ -408,15 +409,17 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         telemetry.update();
         
         // Get current position and calculate target
-        double currentPosition = indexor.getCurrentPosition();
+         currentPosition = indexor.getCurrentPosition();
 
       if (Math.abs(currentPosition)>Math.abs(IndexerPreviousPosition + INDEXOR_TICKS))
         {
-            targetPosition = currentPosition+INDEXOR_TICKS*3-Math.abs(currentPosition % INDEXOR_TICKS);
-            
-            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
+            double correction = currentPosition % INDEXOR_TICKS;
+            targetPosition = currentPosition+INDEXOR_TICKS*2-correction;
+
+            telemetry.addData("🎯 Target Position", "%d ticks", targetPosition);
             telemetry.addData("📍 Current Position", "%d ticks", currentPosition);
-            
+            telemetry.addData("📍 correction", "%d ticks", correction);
+
             telemetry.update();
 
             sleep(2000);
