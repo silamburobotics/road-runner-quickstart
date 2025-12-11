@@ -38,6 +38,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
     private Action trajectory2;
     private Action trajectoryCloseOut;
 
+    public boolean  ranTrajectory2 = false 
+
 
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
@@ -206,6 +208,7 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
+        ranTrajectory2 = true;
 
         moveIndexorToNextPosition();
 
@@ -410,9 +413,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         
         // Get current position and calculate target
          currentPosition = indexor.getCurrentPosition();
-         sleep(100);
 
-      if (Math.abs(currentPosition)>Math.abs(IndexerPreviousPosition + INDEXOR_TICKS))
+      if (ranTrajectory2)
         {
             double correction = currentPosition % INDEXOR_TICKS;
             targetPosition = currentPosition+INDEXOR_TICKS*2-correction;
