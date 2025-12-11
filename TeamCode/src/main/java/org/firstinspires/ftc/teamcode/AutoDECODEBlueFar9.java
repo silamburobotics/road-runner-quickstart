@@ -164,6 +164,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                     indexor.setPower(0);
                     return false;
                 })
+                .lineToYSplineHeading(START_POSE.position.y+1, Math.toRadians(0))
+                .setTangent(Math.toRadians(0))
+                .lineToX(START_POSE.position.x + 2.0)
                 .build();
     }
     
@@ -186,6 +189,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
 
+        moveIndexorToNextPosition();
         fireShot(4);
 
         moveIndexorToNextPosition();
@@ -195,8 +199,20 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         moveIndexorToNextPosition();
 
         fireShot(6);
+        moveIndexorToNextPosition();
 
         Actions.runBlocking(trajectoryCloseOut);
+
+        moveIndexorToNextPosition();
+        fireShot(7);
+
+        moveIndexorToNextPosition();
+
+        fireShot(8);
+
+        moveIndexorToNextPosition();
+
+        fireShot(9);
 
     }
     
