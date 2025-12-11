@@ -416,9 +416,11 @@ public class AutoDECODEBlueFar extends LinearOpMode {
             double correction = currentPosition % INDEXOR_TICKS;
             targetPosition = currentPosition+INDEXOR_TICKS*2-correction;
 
-            telemetry.addData("🎯 Target Position", "%d ticks", targetPosition);
-            telemetry.addData("📍 Current Position", "%d ticks", currentPosition);
-            telemetry.addData("📍 correction", "%d ticks", correction);
+            telemetry.addData("🎯 Target Position", "%.1f ticks", targetPosition);
+            telemetry.addData("📍 Current Position", "%.1f ticks", (double)currentPosition);
+            telemetry.addData("📍 Correction", "%.1f ticks", correction);
+            telemetry.addData("📊 Calculation", "%.1f + %.1f*2 - %.1f = %.1f", 
+                (double)currentPosition, INDEXOR_TICKS, correction, targetPosition);
 
             telemetry.update();
 
