@@ -135,8 +135,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
                     // Start intake system during rearward movement
                     intake.setPower(INTAKE_POWER);
                     conveyor.setPower(CONVEYOR_POWER);
-                    //indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    indexor.setTargetPosition((int)(INDEXOR_TICKS * 10));
+                    ndexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    //indexor.setTargetPosition((int)(INDEXOR_TICKS * 10));
                     indexor.setPower(AUTO_INDEXOR_POWER);
                     return false;
                 })
@@ -410,14 +410,21 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         // Get current position and calculate target
         double currentPosition = indexor.getCurrentPosition();
 
-/*        if (Math.abs(currentPosition)>Math.abs(IndexerPreviousPosition + INDEXOR_TICKS))
+      if (Math.abs(currentPosition)>Math.abs(IndexerPreviousPosition + INDEXOR_TICKS))
         {
             targetPosition = currentPosition+INDEXOR_TICKS*3-Math.abs(currentPosition % INDEXOR_TICKS);
+            
+            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
+            telemetry.addData("📍 Current Position", "%d ticks", currentPosition);
+            
+            telemetry.update();
+
+            sleep(2000);
         }
         else
         {
             targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        }*/
+        }
 
         IndexerPreviousPosition = targetPosition;
 
