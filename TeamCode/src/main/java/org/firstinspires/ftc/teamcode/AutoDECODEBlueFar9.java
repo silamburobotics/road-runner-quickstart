@@ -195,6 +195,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
         ranTrajectory2 = true;
+        double currentPosition = indexor.getCurrentPosition();
 
         moveIndexorToNextPosition();
         fireShot(4);
@@ -209,9 +210,12 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         moveIndexorToNextPosition();
 
         Actions.runBlocking(trajectoryCloseOut);
+        ranTrajectory2 = true;
+        double currentPosition = indexor.getCurrentPosition();
 
         moveIndexorToNextPosition();
         fireShot(7);
+        
 
         moveIndexorToNextPosition();
 
