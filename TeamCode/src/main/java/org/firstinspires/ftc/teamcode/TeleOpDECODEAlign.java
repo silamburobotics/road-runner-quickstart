@@ -99,7 +99,7 @@ public class TeleOpDECODEAlign extends LinearOpMode {
 
     // Shooter velocity settings
     public static final double SHOOTER_TARGET_VELOCITY_1300 = 1300;  // B button velocity
-    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1600;  // Y button velocity
+    public static final double SHOOTER_TARGET_VELOCITY_1600 = 1580;  // Y button velocity
     
     // Shooter PID coefficients for velocity control
     public static double VELOCITY_P = 6.0;  // Proportional coefficient (increased for faster response on restart)
@@ -142,7 +142,7 @@ public class TeleOpDECODEAlign extends LinearOpMode {
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
     public static final double LIGHT_WHITE_POSITION = 0.33;   // Servo position for white light (low speed)
     public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light (in tolerance)
-    public static final double LIGHT_BLUE_POSITION = 1.0;     // Servo position for blue light (high speed)
+    public static final double LIGHT_BLUE_POSITION = 0.95;    // Servo position for blue light (high speed) - adjusted for intensity
     
     // Indexor stuck detection
     public static final double INDEXOR_STUCK_TIMEOUT = 0.5;  // 0.5 seconds as specified
@@ -916,7 +916,7 @@ public class TeleOpDECODEAlign extends LinearOpMode {
         
         // Standard mecanum drive
         double drive = gamepad1.left_stick_y * DRIVE_SPEED_MULTIPLIER;
-        double strafe = gamepad1.left_stick_x * STRAFE_SPEED_MULTIPLIER;
+        double strafe = -gamepad1.left_stick_x * STRAFE_SPEED_MULTIPLIER;  // Inverted for correct left/right
         double turn = -gamepad1.right_stick_x * TURN_SPEED_MULTIPLIER;
         
         // Check if all joysticks are centered
