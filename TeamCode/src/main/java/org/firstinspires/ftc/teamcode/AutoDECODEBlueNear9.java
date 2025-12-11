@@ -48,7 +48,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
-    public static final double AUTO_INDEXOR_POWER = 0.7;      // Increased from 0.3 for faster movement
+    public static final double AUTO_INDEXOR_POWER = 0.3;      // Increased from 0.3 for faster movement
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -69,7 +69,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Blue alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1220;      // Range: 1200-1800 ticks/sec (Blue back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1280;      // Range: 1200-1800 ticks/sec (Blue back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
@@ -233,7 +233,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
             indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
         }
         double nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        
+
         //sleep(5000); // 5 second pause to review
 
         moveIndexorToNextPosition();
@@ -247,6 +247,11 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
         moveIndexorToNextPosition();
 
         fireShot(6);
+
+        moveIndexorToNextPosition();
+        
+        telemetry.addData("✅ Shooting Complete", "All 6 shots fired, starting movement");
+        telemetry.update();
 
         Actions.runBlocking(trajectoryCloseOut);
 
