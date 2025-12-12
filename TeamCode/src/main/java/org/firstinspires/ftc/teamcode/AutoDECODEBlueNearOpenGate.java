@@ -16,8 +16,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@Autonomous(name="Auto Blue Near 9 balls", group="Linear OpMode")
-public class AutoDECODEBlueNear9 extends LinearOpMode {
+@Autonomous(name="Auto Blue Near Open Gate", group="Linear OpMode")
+public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
@@ -49,7 +49,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.6;      // Increased from 0.3 for faster movement
-    public static double INDEXOR_INTAKE_VELOCITY = 350.0;     // Indexor velocity during intake (ticks/sec) - tunable for optimal intake
+    public static double INDEXOR_INTAKE_VELOCITY = 500.0;     // Indexor velocity during intake (ticks/sec) - tunable for optimal intake
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
