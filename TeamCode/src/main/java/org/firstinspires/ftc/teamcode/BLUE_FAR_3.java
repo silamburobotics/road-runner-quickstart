@@ -16,8 +16,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@Autonomous(name="Auto Blue Far", group="Linear OpMode")
-public class AutoDECODEBlueFar extends LinearOpMode {
+@Autonomous(name="BLUE FAR 3", group="Linear OpMode")
+public class BLUE_FAR_3 extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
@@ -35,13 +35,9 @@ public class AutoDECODEBlueFar extends LinearOpMode {
     
     // Pre-built actions
     private Action trajectory1;
-    private Action trajectory2;
     private Action trajectoryCloseOut;
 
     public static double INDEXOR_INTAKE_VELOCITY = 520.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
-
-    public boolean  ranTrajectory2 = false; 
-
 
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
@@ -132,36 +128,9 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         trajectory1 = drive.actionBuilder(START_POSE)
                 .waitSeconds(0.1)  // Placeholder - replace with actual movement if needed
                 .build();
-        
-        // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
-        trajectory2 = drive.actionBuilder(START_POSE)
-                .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(-115))
-                .afterTime(0, (telemetryPacket) -> {
-                    // Start intake system during rearward movement
-                    intake.setPower(INTAKE_POWER);
-                    conveyor.setPower(CONVEYOR_POWER);
-                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    //indexor.setPower(AUTO_INDEXOR_POWER);
-                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
-                    return false;
-                })
-                .setTangent(Math.toRadians(-115))
-                .lineToY(START_POSE.position.y + 34.0)
-
-               .stopAndAdd((telemetryPacket) -> {
-                    // Stop intake system after rearward movement
-                    intake.setPower(0);
-                    conveyor.setPower(0);
-                    indexor.setPower(0);
-                    return false;
-                })
-                .lineToYSplineHeading(START_POSE.position.y+1, Math.toRadians(0))
-                .setTangent(Math.toRadians(0))
-                .lineToX(START_POSE.position.x + 2.0)
-                .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0,START_POSE.position.y+1,0))
-                .lineToX(30)
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 5.0, START_POSE.position.y+25), Math.toRadians(0)) //10.0
                 .build();
 
         telemetry.addData("✅ Trajectory 1", "Built (ready position)");
@@ -198,46 +167,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
         
         fireShot(3);
         moveIndexorToNextPosition();
-        
-        //stopShooterSystem();
-        
-        telemetry.addData("✅ Shooter Sequence", "Complete - 3 shots fired");
-        telemetry.update();
-        
-        // Step 3: Execute Trajectory 2 (move forward with turn, then rearward with intake)
-        telemetry.addData("🚀 STEP 3", "Executing Trajectory 2...");
-        telemetry.update();
-        
-        // Execute first part of trajectory 2 (forward movement with turn)
-        Actions.runBlocking(trajectory2);
-        ranTrajectory2 = true;
-
-        // Diagnostic: Check indexer position after trajectory2
-        int positionAfterTrajectory2 = indexor.getCurrentPosition();
-        telemetry.addData("=== TRAJECTORY 2 COMPLETE ===", "");
-        telemetry.addData("📍 Indexer Position Before Trajectory2", "%.1f ticks", IndexerPreviousPosition);
-        telemetry.addData("📍 Indexer Position After Trajectory2", "%d ticks", positionAfterTrajectory2);
-        telemetry.addData("📊 Position Change", "%d ticks (%.1f degrees)", 
-            positionAfterTrajectory2 - (int)IndexerPreviousPosition,
-            (positionAfterTrajectory2 - IndexerPreviousPosition) * 360.0 / 537.7);
-        telemetry.addData("", "Intake moved indexer backward during ball pickup");
-        telemetry.update();
-        //sleep(3000);
-
-        moveIndexorToNextPosition();
-
-        fireShot(4);
-
-        moveIndexorToNextPosition();
-
-        fireShot(5);
-
-        moveIndexorToNextPosition();
-
-        fireShot(6);
 
         Actions.runBlocking(trajectoryCloseOut);
-
 
         telemetry.addData("✅ Trajectory 2", "Complete");
         telemetry.update();
@@ -424,32 +355,9 @@ public class AutoDECODEBlueFar extends LinearOpMode {
     private void moveIndexorToNextPosition() {
         telemetry.addData("🔄 INDEXOR", "Moving to next position...");
         telemetry.update();
-        
-        // Get current position and calculate target
-         currentPosition = indexor.getCurrentPosition();
 
-      if (ranTrajectory2)
-        {
-            double correction = currentPosition % INDEXOR_TICKS;
-            targetPosition = currentPosition+INDEXOR_TICKS-correction;
-
-            telemetry.addData("🎯 Target Position", "%.1f ticks", targetPosition);
-            telemetry.addData("📍 Current Position", "%.1f ticks", (double)currentPosition);
-            telemetry.addData("📍 Correction", "%.1f ticks", correction);
-            telemetry.addData("📊 Calculation", "%.1f + %.1f*2 - %.1f = %.1f", 
-                (double)currentPosition, INDEXOR_TICKS, correction, targetPosition);
-
-            telemetry.update();
-
-            ranTrajectory2 = false;
-
-            //sleep(2000);
-        }
-        else
-        {
-            targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-        }
-
+        targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
+      
         IndexerPreviousPosition = targetPosition;
 
             // Set indexor to run to position
