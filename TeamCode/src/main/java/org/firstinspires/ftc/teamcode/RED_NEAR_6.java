@@ -166,7 +166,7 @@ public class RED_NEAR_6 extends LinearOpMode {
                     indexor.setVelocity(0);
                     return false;
                 })
-                .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
+                .lineToYSplineHeading(START_POSE.position.y-3, Math.toRadians(0))
                 .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
