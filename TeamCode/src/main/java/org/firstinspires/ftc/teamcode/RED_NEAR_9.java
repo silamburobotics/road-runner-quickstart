@@ -40,6 +40,9 @@ public class RED_NEAR_9 extends LinearOpMode {
     private Action trajectoryCloseOut;
 
     public boolean ranTrajectory2 = false;
+    
+    // Autonomous timing control
+    private ElapsedTime autonomousTimer = new ElapsedTime();
 
     // Alliance and position configuration
     private static final String ALLIANCE = "RED";
@@ -158,7 +161,7 @@ public class RED_NEAR_9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(134)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y-2), Math.toRadians(134)) //10.0
                 .setTangent(Math.toRadians(134))
                 .lineToY(START_POSE.position.y - 32.0) //29.0
 
@@ -180,9 +183,9 @@ public class RED_NEAR_9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.25, START_POSE.position.y+26), Math.toRadians(135.5)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.25, START_POSE.position.y-26), Math.toRadians(135.5)) //10.0
                 .setTangent(Math.toRadians(133.5))
-                .lineToY(START_POSE.position.y + 50.0) //29.0
+                .lineToY(START_POSE.position.y - 50.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
@@ -204,6 +207,9 @@ public class RED_NEAR_9 extends LinearOpMode {
     }
     
     private void executeAutonomousSequence() {
+        // Start autonomous timer
+        autonomousTimer.reset();
+        
         telemetry.addData("🤖 AUTONOMOUS", "Starting Red Back Road Runner sequence...");
         telemetry.update();
         
@@ -278,38 +284,45 @@ public class RED_NEAR_9 extends LinearOpMode {
         telemetry.addData("✅ Shooting Complete", "All 6 shots fired, starting movement");
         telemetry.update();
 
-        // Execute first part of trajectory 3 (forward movement with turn)
-        Actions.runBlocking(trajectory3);
-        ranTrajectory2 = true;
+        // Check if we have time for trajectory3
+        if (autonomousTimer.seconds() < 24.0) {
+            // Execute first part of trajectory 3 (forward movement with turn)
+            Actions.runBlocking(trajectory3);
+            ranTrajectory2 = true;
 
-        // DIAGNOSTIC PAUSE: Display indexer position information after picking balls
-        // Variables already declared earlier in the method
-        currentPosition = indexor.getCurrentPosition();
-        indexerCorrection = 0.0;
-        if (currentPosition > IndexerPreviousPosition + 5) {
-            indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+            // DIAGNOSTIC PAUSE: Display indexer position information after picking balls
+            // Variables already declared earlier in the method
+            currentPosition = indexor.getCurrentPosition();
+            indexerCorrection = 0.0;
+            if (currentPosition > IndexerPreviousPosition + 5) {
+                indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+            }
+            nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
+
+            if (autonomousTimer.seconds() < 26.0) {
+                moveIndexorToNextPosition();
+                fireShot(7);
+            }
+
+            if (autonomousTimer.seconds() < 27.0) {
+                moveIndexorToNextPosition();
+                fireShot(8);
+            }
+
+            if (autonomousTimer.seconds() < 28.0) {
+                moveIndexorToNextPosition();
+                fireShot(9);
+                moveIndexorToNextPosition();
+            }
         }
-        nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
-
-        //sleep(5000); // 5 second pause to review
-
-        moveIndexorToNextPosition();
-
-        fireShot(7);
-
-        moveIndexorToNextPosition();
-
-        fireShot(8);
-
-        moveIndexorToNextPosition();
-
-        fireShot(9);
-
-        moveIndexorToNextPosition();
         
-        telemetry.addData("✅ Shooting Complete", "All 6 shots fired, starting movement");
+        telemetry.addData("✅ Shooting Complete", "Preparing for final movement");
         telemetry.update();
 
+        // Wait until 29th second, then execute trajectoryCloseOut
+        while (opModeIsActive() && autonomousTimer.seconds() < 29.0) {
+            sleep(50);
+        }
 
         Actions.runBlocking(trajectoryCloseOut);
 
@@ -520,7 +533,7 @@ public class RED_NEAR_9 extends LinearOpMode {
 
         IndexerPreviousPosition = targetPosition;
 
-            // Set indexor to run to position
+        // Set indexor to run to position
         indexor.setTargetPosition((int)targetPosition);
         indexor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexor.setPower(AUTO_INDEXOR_POWER);
@@ -528,9 +541,36 @@ public class RED_NEAR_9 extends LinearOpMode {
         ElapsedTime indexorTimer = new ElapsedTime();
         indexorTimer.reset();
         
+        int startPosition = indexor.getCurrentPosition();
+        
         // Wait for indexor to reach position (optimized for speed)
         while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
             sleep(10);  // Reduced from 50ms to 10ms for faster response
+        }
+        
+        // Check if indexor is stuck (didn't move enough)
+        int endPosition = indexor.getCurrentPosition();
+        int movementDelta = Math.abs(endPosition - startPosition);
+        
+        if (movementDelta < (INDEXOR_TICKS * 0.5)) {  // If moved less than 50% of expected distance
+            telemetry.addData("⚠️ INDEXOR STUCK", "Clearing jam...");
+            telemetry.update();
+            
+            // Stop indexor
+            indexor.setPower(0);
+            indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            
+            // Run conveyor in reverse to eject jammed ball
+            conveyor.setPower(-CONVEYOR_POWER);
+            sleep(1000);  // 1 second reverse
+            
+            // Restore normal conveyor operation
+            conveyor.setPower(CONVEYOR_POWER);
+            
+            telemetry.addData("✅ JAM CLEARED", "Continuing...");
+            telemetry.update();
+            
+            return;
         }
 
         // Stop indexor - conveyor keeps running
