@@ -159,7 +159,7 @@ public class RED_NEAR_6 extends LinearOpMode {
                 
                 .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(134)) //10.0
                 .setTangent(Math.toRadians(134))
-                .lineToY(START_POSE.position.y + 31.0) //29.0
+                .lineToY(START_POSE.position.y - 31.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
