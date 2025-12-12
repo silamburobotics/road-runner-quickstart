@@ -47,7 +47,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
     public static final double INTAKE_POWER = 0.5;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement (increased to 0.7 for faster advancement)
-    public static double INDEXOR_INTAKE_VELOCITY = 500.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
+    public static double INDEXOR_INTAKE_VELOCITY = 600.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
