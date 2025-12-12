@@ -219,9 +219,9 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
         
         moveIndexorToNextPosition();
 
-        //fireShot(8);
+        fireShot(8);
 
-       // moveIndexorToNextPosition();
+        moveIndexorToNextPosition();
 
         Actions.runBlocking(trajectoryCloseOutFinal);
 
