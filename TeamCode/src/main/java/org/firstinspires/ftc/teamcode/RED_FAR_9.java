@@ -121,15 +121,15 @@ public class RED_FAR_9 extends LinearOpMode {
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(START_POSE)
-                .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(-115))
+                .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(115))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start indexor with velocity control - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
-                .setTangent(Math.toRadians(-115))
-                .lineToY(START_POSE.position.y + 36.0) // 29.0
+                .setTangent(Math.toRadians(115))
+                .lineToY(START_POSE.position.y - 36.0) // 29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
@@ -144,15 +144,15 @@ public class RED_FAR_9 extends LinearOpMode {
         // Trajectory 3: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0,START_POSE.position.y+1,0))
                 //.lineToXSplineHeading(START_POSE.position.x + 54.0, Math.toRadians(-115))
-                .splineToLinearHeading(new Pose2d(START_POSE.position.x+49,START_POSE.position.y-5,Math.toRadians(-112)),0)
+                .splineToLinearHeading(new Pose2d(START_POSE.position.x+49,START_POSE.position.y-5,Math.toRadians(112)),0)
                 .afterTime(0, (telemetryPacket) -> {
                     // Start indexor with velocity control - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
                     indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
-                .setTangent(Math.toRadians(-112))
-                .lineToY(START_POSE.position.y + 26.0) //18.0
+                .setTangent(Math.toRadians(112))
+                .lineToY(START_POSE.position.y - 26.0) //18.0
 
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running

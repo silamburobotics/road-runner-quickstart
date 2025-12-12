@@ -135,7 +135,7 @@ public class RED_FAR_6 extends LinearOpMode {
         
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory2 = drive.actionBuilder(START_POSE)
-                .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(-115))
+                .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(115))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start intake system during rearward movement
                     intake.setPower(INTAKE_POWER);
@@ -145,8 +145,8 @@ public class RED_FAR_6 extends LinearOpMode {
                     indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
-                .setTangent(Math.toRadians(-115))
-                .lineToY(START_POSE.position.y + 34.0)
+                .setTangent(Math.toRadians(115))
+                .lineToY(START_POSE.position.y - 34.0)
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop intake system after rearward movement

@@ -130,7 +130,7 @@ public class BLUE_FAR_3 extends LinearOpMode {
                 .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0,START_POSE.position.y+1,0))
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 5.0, START_POSE.position.y+25), Math.toRadians(0)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x + 10.0, START_POSE.position.y+25), Math.toRadians(0)) //10.0
                 .build();
 
         telemetry.addData("✅ Trajectory 1", "Built (ready position)");
