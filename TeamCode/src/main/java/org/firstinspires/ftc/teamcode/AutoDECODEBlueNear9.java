@@ -180,9 +180,9 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.0, START_POSE.position.y+34), Math.toRadians(-134)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.0, START_POSE.position.y+26), Math.toRadians(-134)) //10.0
                 .setTangent(Math.toRadians(-134))
-                .lineToY(START_POSE.position.y + 31.0) //29.0
+                .lineToY(START_POSE.position.y + 61.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
