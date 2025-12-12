@@ -16,8 +16,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@Autonomous(name="Auto Blue Near Open Gate", group="Linear OpMode")
-public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
+@Autonomous(name="RED NEAR 9", group="Linear OpMode")
+public class RED_NEAR_9 extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
@@ -36,14 +36,15 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
     // Pre-built actions
     private Action trajectory1;
     private Action trajectory2;
+    private Action trajectory3;
     private Action trajectoryCloseOut;
 
     public boolean ranTrajectory2 = false;
 
     // Alliance and position configuration
-    private static final String ALLIANCE = "BLUE";
+    private static final String ALLIANCE = "RED";
     private static final String POSITION = "BACK";
-    private static final Pose2d START_POSE = new Pose2d(12.0, 108.0, 0.0); // Starting pose for Road Runner (back position)
+    private static final Pose2d START_POSE = new Pose2d(12.0, -108.0, 0.0); // Starting pose for Road Runner (back position)
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
@@ -69,7 +70,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
     // Indexor position settings
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
-    // Shooter velocity control (ticks per second) - Blue alliance optimized
+    // Shooter velocity control (ticks per second) - Red alliance optimized
     public static double SHOOTER_TARGET_VELOCITY = 1280;      // Range: 1200-1800 ticks/sec (Blue back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
@@ -83,7 +84,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
     public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light
     public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
-    public static final double LIGHT_BLUE_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
+    public static final double LIGHT_RED_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
@@ -113,7 +114,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
         
         // Display autonomous sequence
         telemetry.addData("Status", "Auto Far - Road Runner Initialized");
-        telemetry.addData("Alliance", "🔵 BLUE");
+        telemetry.addData("Alliance", "🔴 RED");
         telemetry.addData("Position", "FAR");
         telemetry.addData("Start Pose", "X: %.1f\", Y: %.1f\", H: %.1f°", START_POSE.position.x, START_POSE.position.y, Math.toDegrees(START_POSE.heading.toDouble()));
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
@@ -122,7 +123,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
         telemetry.addData("3.", "Trajectory 2 - 30\" fwd + 130° turn + 10\" rear");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
-        telemetry.addData("Alliance Light", "🔵 Blue indicator");
+        telemetry.addData("Alliance Light", "🔴 Red indicator");
         telemetry.addData("Total Time", "~8-12 seconds");
         telemetry.addData("", "");
         telemetry.addData("Drive System", "Road Runner with GoBilda Pinpoint");
@@ -159,20 +160,37 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
                 
                 .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
                 .setTangent(Math.toRadians(-134))
-                .lineToY(START_POSE.position.y + 31.0) //29.0
+                .lineToY(START_POSE.position.y + 32.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
                     indexor.setVelocity(0);
                     return false;
                 })
-                
-                .turnTo(Math.toRadians(-230))
-                .waitSeconds(0.2)
-                //.turnTo(Math.toRadians(-134))
-                //.lineToXSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
-                .setTangent(Math.toRadians(60))
                 .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
+                .build();
+
+        // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
+        trajectory3 = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+3, START_POSE.heading.toDouble()))
+                .turnTo(Math.toRadians(-133.5))
+                .afterTime(0, (telemetryPacket) -> {
+                    // Start indexor only - intake and conveyor already running
+                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
+                    return false;
+                })
+                
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.25, START_POSE.position.y+26), Math.toRadians(-135.5)) //10.0
+                .setTangent(Math.toRadians(-133.5))
+                .lineToY(START_POSE.position.y + 50.0) //29.0
+
+               .stopAndAdd((telemetryPacket) -> {
+                    // Stop indexor only - keep intake and conveyor running
+                    indexor.setVelocity(0);
+                    return false;
+                })
+               // .lineToYSplineHeading(START_POSE.position.y+13, Math.toRadians(0))
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 3.0, START_POSE.position.y+3), Math.toRadians(0)) //10.0
                 .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
@@ -186,7 +204,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
     }
     
     private void executeAutonomousSequence() {
-        telemetry.addData("🤖 AUTONOMOUS", "Starting Blue Back Road Runner sequence...");
+        telemetry.addData("🤖 AUTONOMOUS", "Starting Red Back Road Runner sequence...");
         telemetry.update();
         
         // Start shooter immediately - it will spin up during trajectory1
@@ -260,13 +278,46 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
         telemetry.addData("✅ Shooting Complete", "All 6 shots fired, starting movement");
         telemetry.update();
 
+        // Execute first part of trajectory 3 (forward movement with turn)
+        Actions.runBlocking(trajectory3);
+        ranTrajectory2 = true;
+
+        // DIAGNOSTIC PAUSE: Display indexer position information after picking balls
+        // Variables already declared earlier in the method
+        currentPosition = indexor.getCurrentPosition();
+        indexerCorrection = 0.0;
+        if (currentPosition > IndexerPreviousPosition + 5) {
+            indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+        }
+        nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
+
+        //sleep(5000); // 5 second pause to review
+
+        moveIndexorToNextPosition();
+
+        fireShot(7);
+
+        moveIndexorToNextPosition();
+
+        fireShot(8);
+
+        moveIndexorToNextPosition();
+
+        fireShot(9);
+
+        moveIndexorToNextPosition();
+        
+        telemetry.addData("✅ Shooting Complete", "All 6 shots fired, starting movement");
+        telemetry.update();
+
+
         Actions.runBlocking(trajectoryCloseOut);
 
 
         telemetry.addData("✅ Trajectory 2", "Complete");
         telemetry.update();
         
-        telemetry.addData("✅ AUTONOMOUS", "Blue Back Road Runner sequence completed!");
+        telemetry.addData("✅ AUTONOMOUS", "Red Back Road Runner sequence completed!");
         telemetry.addData("🔵 Alliance", "BLUE");
         telemetry.addData("📍 Final Position", "30\" fwd + 130° turn + 10\" rear");
         telemetry.addData("🎯 Shots Fired", "3 shots");
@@ -289,7 +340,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
         conveyor.setPower(CONVEYOR_POWER);
         
         // Set alliance indicator light
-        speedLight.setPosition(LIGHT_BLUE_POSITION);
+        speedLight.setPosition(LIGHT_RED_POSITION);
         
         telemetry.addData("✅ Shooter", "Started with BOOST: %.0f ticks/sec", boostedVelocity);
         telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
@@ -525,7 +576,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
         } else if (speedPercentage >= 0.8) {
             speedLight.setPosition(LIGHT_WHITE_POSITION); // Getting close
         } else {
-            speedLight.setPosition(LIGHT_BLUE_POSITION); // Alliance indicator while spinning up
+            speedLight.setPosition(LIGHT_RED_POSITION); // Alliance indicator while spinning up
         }
     }
     
@@ -537,7 +588,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
         } else if (speedPercentage >= 0.8) {
             return "⚪ WHITE (Close)";
         } else {
-            return "🔵 BLUE (Alliance)";
+            return "🔴 RED (Alliance)";
         }
     }
     

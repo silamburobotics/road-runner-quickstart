@@ -16,8 +16,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
-@Autonomous(name="Auto Red Far", group="Linear OpMode")
-public class AutoDECODERedFar extends LinearOpMode {
+@Autonomous(name="Auto Red Near 6", group="Linear OpMode")
+public class RED_NEAR_6 extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
@@ -43,45 +43,63 @@ public class AutoDECODERedFar extends LinearOpMode {
     // Alliance and position configuration
     private static final String ALLIANCE = "RED";
     private static final String POSITION = "BACK";
-    private static final Pose2d START_POSE = new Pose2d(12.0, -108.0, 0.0); // Starting pose for Road Runner (back position) - mirrored Y
+    private static final Pose2d START_POSE = new Pose2d(12.0, -108.0, 0.0); // Starting pose for Road Runner (back position)
     
     // Motor power settings
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
-    public static final double AUTO_INDEXOR_POWER = 0.3;      // Power for automatic indexor movement
+    public static final double AUTO_INDEXOR_POWER = 0.6;      // Increased from 0.3 for faster movement
+    public static double INDEXOR_INTAKE_VELOCITY = 500.0;     // Indexor velocity during intake (ticks/sec) - tunable for optimal intake
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
+    
+
+    // Shooter PID coefficients for velocity control (from TeleOpDECODE)
+    public static double VELOCITY_P = 6.0;    // Proportional coefficient (increased from 4 for faster response)
+    public static double VELOCITY_I = 0.15;   // Integral coefficient
+    public static double VELOCITY_D = 0.5;    // Derivative coefficient (increased from 0.3 for better damping)
+    public static double VELOCITY_F = 13.0;   // Feedforward coefficient
+    
+    // Voltage boost settings
+    public static final double BOOST_VOLTAGE_MULTIPLIER = 1.35;    // 35% voltage boost for startup
+    public static final double BOOST_DURATION = 0.4;                // 400 milliseconds boost duration
+    
+    
     
     // Indexor position settings
     public static final double INDEXOR_TICKS = 537.7/3;              // goBILDA 312 RPM motor: 120 degrees = 179 ticks
     
     // Shooter velocity control (ticks per second) - Red alliance optimized
-    public static double SHOOTER_TARGET_VELOCITY = 1470;      // Range: 1200-1800 ticks/sec (Red back position)
+    public static double SHOOTER_TARGET_VELOCITY = 1280;      // Range: 1200-1800 ticks/sec (Blue back position)
     public static final double SHOOTER_SPEED_THRESHOLD = 0.95; // 95% of target speed
     public static final double SHOOTER_TICKS_PER_REVOLUTION = 1020.0; // goBILDA 435 RPM motor
     
     // Speed stabilization settings
     public static final double SHOOTER_SPEED_TOLERANCE = 25;    // ticks/sec tolerance for "stable" speed
-    public static final double SHOOTER_STABILIZATION_TIME = 0.5; // Seconds to wait for speed stabilization between shots
+    public static final double SHOOTER_STABILIZATION_TIME = 0.2; // Seconds to wait for speed stabilization (reduced from 0.5s)
     public static final double SHOOTER_VELOCITY_CORRECTION_FACTOR = 1.02; // Slight overcorrection for consistency
     
     // Speed light control settings (using servo positions for LED control)
     public static final double LIGHT_OFF_POSITION = 0.0;      // Servo position for light off
     public static final double LIGHT_GREEN_POSITION = 0.5;    // Servo position for green light
     public static final double LIGHT_WHITE_POSITION = 1.0;    // Servo position for white light
-    public static final double LIGHT_RED_POSITION = 0.25;     // Servo position for red light (alliance indicator)
+    public static final double LIGHT_RED_POSITION = 0.25;    // Servo position for blue light (alliance indicator)
     
     // Trigger servo positions
     public static final double TRIGGER_FIRE = 0.0;     // Fire position (27.0 degrees)
     public static final double TRIGGER_HOME = 0.5;     // Home position (104.4 degrees)
     
     // Autonomous timing settings
-    public static final double TRIGGER_FIRE_DURATION = 0.5;   // Seconds to stay in fire position
-    public static final double WAIT_BETWEEN_SHOTS = 0.3;      // Seconds to wait between shots (stabilization)
+    public static final double TRIGGER_FIRE_DURATION = 0.3;   // Seconds to stay in fire position (reduced from 0.5s)
+    public static final double WAIT_BETWEEN_SHOTS = 0.15;     // Seconds to wait between shots (reduced from 0.3s)
     public static final double INDEXOR_MOVE_TIMEOUT = 3.0;    // Maximum time to wait for indexor movement
     public static final double SHOOTER_SPINUP_TIMEOUT = 5.0;  // Maximum time to wait for shooter to reach speed
     public double IndexerPreviousPosition = 0.0;  // Maximum time to wait for shooter to reach speed
 
+ // Road Runner trajectory settings
+    public static final double REARWARD_DISTANCE = 51.0;      // Distance to move left (inches)
+    public static final double LEFTWARD_DISTANCE = 24.0;      // Distance to move forward (inches)
+   
     // Road Runner trajectory settings
     public static final double FORWARD_DISTANCE = 40.0;       // Distance to move sideways (inches)
     
@@ -101,7 +119,7 @@ public class AutoDECODERedFar extends LinearOpMode {
         telemetry.addData("=== AUTONOMOUS SEQUENCE ===", "");
         telemetry.addData("1.", "Trajectory 1 - Move to shooting position");
         telemetry.addData("2.", "Shooter - Fire 3 shots");
-        telemetry.addData("3.", "Trajectory 2 - 27\" fwd + 115° turn + 30\" fwd");
+        telemetry.addData("3.", "Trajectory 2 - 30\" fwd + 130° turn + 10\" rear");
         telemetry.addData("", "");
         telemetry.addData("Shooter Speed", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.addData("Alliance Light", "🔴 Red indicator");
@@ -125,47 +143,52 @@ public class AutoDECODERedFar extends LinearOpMode {
         // Trajectory 1: Initial movement (if needed - currently staying at start)
         // You can modify this to move to a specific shooting position
         trajectory1 = drive.actionBuilder(START_POSE)
-                .waitSeconds(0.1)  // Placeholder - replace with actual movement if needed
-                .build();
-        
-        // Trajectory 2: Move 27 inches forward while turning to 115 degrees, then move 30 inches forward with intake
-        // Mirrored from blue: Y coordinates negated, angles adjusted for red alliance
-        trajectory2 = drive.actionBuilder(START_POSE)
-                .lineToXSplineHeading(START_POSE.position.x + 27.0, Math.toRadians(115))  // Mirror: -115 becomes +115
-                .afterTime(0, (telemetryPacket) -> {
-                    // Start intake system during forward movement
-                    intake.setPower(INTAKE_POWER);
-                    conveyor.setPower(CONVEYOR_POWER);
-                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    indexor.setPower(AUTO_INDEXOR_POWER);
-                    return false;
-                })
-                .setTangent(Math.toRadians(115))  // Mirror: -115 becomes +115
-                .lineToY(START_POSE.position.y - 34.0)  // Mirror: +30 becomes -29
-                .stopAndAdd((telemetryPacket) -> {
-                    // Stop intake system after forward movement
-                    intake.setPower(0);
-                    conveyor.setPower(0);
-                    indexor.setPower(0);
-                    return false;
-                })
-                .lineToYSplineHeading(START_POSE.position.y - 1, Math.toRadians(0))  // Mirror: +1 becomes -1
-                .setTangent(Math.toRadians(0))
-                .lineToX(START_POSE.position.x + 2.0)
+                .lineToX(START_POSE.position.x - REARWARD_DISTANCE)  // Move left 50 inches (same as Blue)
                 .build();
 
-        trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x + 2.0, START_POSE.position.y - 1, 0))  // Mirror: +1 becomes -1
-                .lineToX(30)
+        
+        // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
+        trajectory2 = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
+                .turnTo(Math.toRadians(-134))
+                .afterTime(0, (telemetryPacket) -> {
+                    // Start indexor only - intake and conveyor already running
+                    indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
+                    return false;
+                })
+                
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
+                .setTangent(Math.toRadians(-134))
+                .lineToY(START_POSE.position.y + 31.0) //29.0
+
+               .stopAndAdd((telemetryPacket) -> {
+                    // Stop indexor only - keep intake and conveyor running
+                    indexor.setVelocity(0);
+                    return false;
+                })
+                .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
                 .build();
+
+         trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y + LEFTWARD_DISTANCE), START_POSE.heading.toDouble())  // Strafe backward 24 inches (reversed direction)
+                .build();
+
 
         telemetry.addData("✅ Trajectory 1", "Built (ready position)");
-        telemetry.addData("✅ Trajectory 2", "Built (27\" fwd + 115° turn + 30\" fwd)");
+        telemetry.addData("✅ Trajectory 2", "Built (30\" fwd + 130° turn + 10\" rear)");
         telemetry.update();
     }
     
     private void executeAutonomousSequence() {
         telemetry.addData("🤖 AUTONOMOUS", "Starting Red Back Road Runner sequence...");
         telemetry.update();
+        
+        // Start shooter immediately - it will spin up during trajectory1
+        startShooterSystem();
+        
+        // Start intake and conveyor - keep them running throughout
+        intake.setPower(AUTO_INDEXOR_POWER);
+        conveyor.setPower(CONVEYOR_POWER);
         
         // Step 1: Execute Trajectory 1 (move to shooting position)
         telemetry.addData("🚀 STEP 1", "Executing Trajectory 1...");
@@ -179,10 +202,8 @@ public class AutoDECODERedFar extends LinearOpMode {
         telemetry.addData("🚀 STEP 2", "Executing Shooter Sequence...");
         telemetry.update();
         
-        startShooterSystem();
+        // Shooter should be ready or nearly ready by now
         waitForShooterSpeed();
-
-        sleep(1000);
         
         fireShot(1);
         moveIndexorToNextPosition();
@@ -198,31 +219,50 @@ public class AutoDECODERedFar extends LinearOpMode {
         telemetry.addData("✅ Shooter Sequence", "Complete - 3 shots fired");
         telemetry.update();
         
-        // Step 3: Execute Trajectory 2 (move forward with turn, then forward with intake)
+        // Step 3: Execute Trajectory 2 (move forward with turn, then rearward with intake)
         telemetry.addData("🚀 STEP 3", "Executing Trajectory 2...");
         telemetry.update();
         
-        // Execute trajectory 2
+        // Execute first part of trajectory 2 (forward movement with turn)
         Actions.runBlocking(trajectory2);
         ranTrajectory2 = true;
 
-        
-        telemetry.addData("✅ Trajectory 2", "Complete");
-        telemetry.update();
+        // DIAGNOSTIC PAUSE: Display indexer position information after picking balls
+        double currentPosition = indexor.getCurrentPosition();
+        double indexerCorrection = 0.0;
+        if (currentPosition > IndexerPreviousPosition + 5) {
+            indexerCorrection = INDEXOR_TICKS - (currentPosition % INDEXOR_TICKS);
+        }
+        double nextTargetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
 
+        //sleep(5000); // 5 second pause to review
 
         moveIndexorToNextPosition();
+
         fireShot(4);
+
         moveIndexorToNextPosition();
+
         fireShot(5);
+
         moveIndexorToNextPosition();
+
         fireShot(6);
 
+        moveIndexorToNextPosition();
+        
+        telemetry.addData("✅ Shooting Complete", "All 6 shots fired, starting movement");
+        telemetry.update();
+
         Actions.runBlocking(trajectoryCloseOut);
+
+
+        telemetry.addData("✅ Trajectory 2", "Complete");
+        telemetry.update();
         
         telemetry.addData("✅ AUTONOMOUS", "Red Back Road Runner sequence completed!");
-        telemetry.addData("🔴 Alliance", "RED");
-        telemetry.addData("📍 Final Position", "27\" fwd + 115° turn + 30\" fwd");
+        telemetry.addData("🔵 Alliance", "BLUE");
+        telemetry.addData("📍 Final Position", "30\" fwd + 130° turn + 10\" rear");
         telemetry.addData("🎯 Shots Fired", "3 shots");
         telemetry.addData("⏱️ Status", "Autonomous finished");
         telemetry.update();
@@ -232,9 +272,9 @@ public class AutoDECODERedFar extends LinearOpMode {
         telemetry.addData("🚀 STEP 1", "Starting shooter system...");
         telemetry.update();
         
-        // Start shooter with optimized velocity control for consistency
-        double initialVelocity = SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR;
-        shooter.setVelocity(initialVelocity);
+        // Start shooter with voltage boost for faster spin-up
+        double boostedVelocity = SHOOTER_TARGET_VELOCITY * BOOST_VOLTAGE_MULTIPLIER;
+        shooter.setVelocity(boostedVelocity);
         
         // Start shooter servo
         shooterServo.setPower(SHOOTER_SERVO_POWER);
@@ -245,11 +285,21 @@ public class AutoDECODERedFar extends LinearOpMode {
         // Set alliance indicator light
         speedLight.setPosition(LIGHT_RED_POSITION);
         
-        telemetry.addData("✅ Shooter", "Started at %.0f ticks/sec (corrected)", initialVelocity);
+        telemetry.addData("✅ Shooter", "Started with BOOST: %.0f ticks/sec", boostedVelocity);
         telemetry.addData("🎯 Target", "%.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
-        telemetry.addData("✅ Shooter Servo", "Running at %.1f power", SHOOTER_SERVO_POWER);
-        telemetry.addData("✅ Conveyor", "Running at %.1f power", CONVEYOR_POWER);
-        telemetry.addData("🔴 Alliance Light", "Red indicator active");
+        telemetry.update();
+        
+        // Wait for boost duration, then return to normal velocity
+        ElapsedTime boostTimer = new ElapsedTime();
+        boostTimer.reset();
+        
+        while (opModeIsActive() && boostTimer.seconds() < BOOST_DURATION) {
+            sleep(50);
+        }
+        
+        // Return to normal velocity after boost
+        shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
+        telemetry.addData("✅ Boost Complete", "Normal velocity: %.0f ticks/sec", SHOOTER_TARGET_VELOCITY);
         telemetry.update();
     }
     
@@ -329,7 +379,7 @@ public class AutoDECODERedFar extends LinearOpMode {
             telemetry.update();
             
             // If speed is stable for a reasonable time, we can exit early
-            if (speedStable && stabilizationTimer.seconds() > 0.5) {
+            if (speedStable && stabilizationTimer.seconds() > 0.3) {
                 telemetry.addData("✅ STABILIZED", "Shooter speed consistent!");
                 telemetry.update();
                 return;
@@ -355,7 +405,7 @@ public class AutoDECODERedFar extends LinearOpMode {
             telemetry.addData("🔧 PRE-FIRE", "Correcting velocity: %.0f → %.0f", preFire, SHOOTER_TARGET_VELOCITY);
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY * SHOOTER_VELOCITY_CORRECTION_FACTOR);
             telemetry.update();
-            sleep(200); // Brief stabilization
+            sleep(100); // Brief stabilization (reduced from 200ms)
         }
         
         // Move trigger to fire position
@@ -364,25 +414,12 @@ public class AutoDECODERedFar extends LinearOpMode {
         ElapsedTime fireTimer = new ElapsedTime();
         fireTimer.reset();
         
-        // Wait for fire duration with velocity monitoring
+        // Wait for fire duration with velocity monitoring (optimized)
         while (opModeIsActive() && fireTimer.seconds() < TRIGGER_FIRE_DURATION) {
             // Continuously reapply shooter velocity to maintain consistent speed
             shooter.setVelocity(SHOOTER_TARGET_VELOCITY);
-            
-            double currentVelocity = shooter.getVelocity();
-            double speedPercentage = currentVelocity / SHOOTER_TARGET_VELOCITY;
-            double velocityError = Math.abs(currentVelocity - SHOOTER_TARGET_VELOCITY);
-            
-            telemetry.addData("🎯 Shot", "%d of 3", shotNumber);
-            telemetry.addData("💥 Trigger", "FIRE position");
-            telemetry.addData("⚡ Shooter", "%.0f ticks/sec (%.0f%%)", currentVelocity, speedPercentage * 100);
-            telemetry.addData("📊 Velocity Error", "%.0f ticks/sec", velocityError);
-            telemetry.addData("⏱️ Fire Time", "%.1f / %.1f seconds", fireTimer.seconds(), TRIGGER_FIRE_DURATION);
-            
-            telemetry.update();
-            sleep(50);
+            sleep(10);  // Reduced from 50ms for faster response
         }
-        
         //Trigger intermittent firing
         triggerServo.setPosition(0.25);
         triggerServo.setPosition(TRIGGER_FIRE);
@@ -408,17 +445,18 @@ public class AutoDECODERedFar extends LinearOpMode {
         double currentPosition = indexor.getCurrentPosition();
         double targetPosition;
         
-        // If we just ran trajectory2, correct for any backward movement
         if (ranTrajectory2) {
             double correction = currentPosition % INDEXOR_TICKS;
             targetPosition = currentPosition + INDEXOR_TICKS - correction;
-            ranTrajectory2 = false;
-            
-            telemetry.addData("🔧 Correction Applied", "After trajectory2");
-            telemetry.addData("Current Position", "%.1f ticks", currentPosition);
-            telemetry.addData("Correction", "%.1f ticks", correction);
-            telemetry.addData("New Target", "%.1f ticks", targetPosition);
+
+            telemetry.addData("🎯 Target Position", "%.1f ticks", targetPosition);
+            telemetry.addData("📍 Current Position", "%.1f ticks", (double)currentPosition);
+            telemetry.addData("📍 Correction", "%.1f ticks", correction);
+            telemetry.addData("📊 Calculation", "%.1f + %.1f - %.1f = %.1f", 
+                (double)currentPosition, INDEXOR_TICKS, correction, targetPosition);
             telemetry.update();
+
+            ranTrajectory2 = false;
         } else {
             targetPosition = IndexerPreviousPosition + INDEXOR_TICKS;
         }
@@ -428,27 +466,19 @@ public class AutoDECODERedFar extends LinearOpMode {
             // Set indexor to run to position
         indexor.setTargetPosition((int)targetPosition);
         indexor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        conveyor.setPower(CONVEYOR_POWER);
         indexor.setPower(AUTO_INDEXOR_POWER);
         
         ElapsedTime indexorTimer = new ElapsedTime();
         indexorTimer.reset();
         
-        // Wait for indexor to reach position
+        // Wait for indexor to reach position (optimized for speed)
         while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
-            telemetry.addData("🎯 Target Position", "%d ticks", (int)targetPosition);
-            telemetry.addData("📍 Current Position", "%d ticks", indexor.getCurrentPosition());
-            telemetry.addData("🔄 Indexor Status", indexor.isBusy() ? "Moving..." : "Complete");
-            telemetry.addData("⏱️ Elapsed", "%.1f / %.1f seconds", indexorTimer.seconds(), INDEXOR_MOVE_TIMEOUT);
-            telemetry.update();
-            sleep(50);
+            sleep(10);  // Reduced from 50ms to 10ms for faster response
         }
 
-        // Stop indexor
+        // Stop indexor - conveyor keeps running
         indexor.setPower(0);
         indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-
-        conveyor.setPower(0);
 
         telemetry.addData("✅ Indexor", "Position advanced");
         telemetry.update();
@@ -511,6 +541,9 @@ public class AutoDECODERedFar extends LinearOpMode {
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         conveyor = hardwareMap.get(DcMotorEx.class, "conveyor");
         shooter = hardwareMap.get(DcMotorEx.class, "shooter");
+        
+        // Set custom PID coefficients for shooter velocity control
+        shooter.setVelocityPIDFCoefficients(VELOCITY_P, VELOCITY_I, VELOCITY_D, VELOCITY_F);
         
         // Initialize servos
         shooterServo = hardwareMap.get(CRServo.class, "shooterServo");
