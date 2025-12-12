@@ -129,7 +129,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(-115))
-                .lineToY(START_POSE.position.y + 35.0) // 29.0
+                .lineToY(START_POSE.position.y + 36.0) // 29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
@@ -152,7 +152,7 @@ public class AutoDECODEBlueFar9 extends LinearOpMode {
                     return false;
                 })
                 .setTangent(Math.toRadians(-112))
-                .lineToY(START_POSE.position.y + 25.0) //18.0
+                .lineToY(START_POSE.position.y + 26.0) //18.0
 
                 .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
