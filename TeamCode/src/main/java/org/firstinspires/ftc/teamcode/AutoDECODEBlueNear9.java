@@ -50,7 +50,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
     public static final double INTAKE_POWER = 0.8;
     public static final double CONVEYOR_POWER = 1.0;
     public static final double AUTO_INDEXOR_POWER = 0.6;      // Increased from 0.3 for faster movement
-    public static double INDEXOR_INTAKE_VELOCITY = 530.0;     // Indexor velocity during intake (ticks/sec) - tunable for optimal intake
+    public static double INDEXOR_INTAKE_VELOCITY = 500.0;     // Indexor velocity during intake (ticks/sec) - tunable for optimal intake
     public static final double SHOOTER_POWER = 1.0;
     public static final double SHOOTER_SERVO_POWER = 1.0;     // Positive for forward direction
     
@@ -172,7 +172,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
 
         // Trajectory 2: Move 30 inches forward while turning to 130 degrees, then move 10 inches rearward with intake
         trajectory3 = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+3, START_POSE.heading.toDouble()))
-                .turnTo(Math.toRadians(-134))
+                .turnTo(Math.toRadians(-133.5))
                 .afterTime(0, (telemetryPacket) -> {
                     // Start indexor only - intake and conveyor already running
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -180,16 +180,17 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.0, START_POSE.position.y+16), Math.toRadians(-134)) //10.0
-                .setTangent(Math.toRadians(-134))
-                .lineToY(START_POSE.position.y + 56.0) //29.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 14.25, START_POSE.position.y+26), Math.toRadians(-135.5)) //10.0
+                .setTangent(Math.toRadians(-133.5))
+                .lineToY(START_POSE.position.y + 50.0) //29.0
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
                     indexor.setVelocity(0);
                     return false;
                 })
-                .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
+               // .lineToYSplineHeading(START_POSE.position.y+13, Math.toRadians(0))
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 3.0, START_POSE.position.y+3), Math.toRadians(0)) //10.0
                 .build();
 
          trajectoryCloseOut = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y, START_POSE.heading.toDouble()))

@@ -38,6 +38,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
     private Action trajectory2;
     private Action trajectoryCloseOut;
 
+    public static double INDEXOR_INTAKE_VELOCITY = 520.0;     // Velocity for indexor during intake (ticks/sec) - tunable for correct ball intake speed
+
     public boolean  ranTrajectory2 = false; 
 
 
@@ -139,8 +141,8 @@ public class AutoDECODEBlueFar extends LinearOpMode {
                     intake.setPower(INTAKE_POWER);
                     conveyor.setPower(CONVEYOR_POWER);
                     indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                    //indexor.setTargetPosition((int)(INDEXOR_TICKS * 10));
-                    indexor.setPower(AUTO_INDEXOR_POWER);
+                    //indexor.setPower(AUTO_INDEXOR_POWER);
+                    indexor.setVelocity(INDEXOR_INTAKE_VELOCITY);
                     return false;
                 })
                 .setTangent(Math.toRadians(-115))
