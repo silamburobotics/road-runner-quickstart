@@ -180,7 +180,7 @@ public class AutoDECODEBlueNear9 extends LinearOpMode {
                     return false;
                 })
                 
-                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
+                .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+26), Math.toRadians(-134)) //10.0
                 .setTangent(Math.toRadians(-134))
                 .lineToY(START_POSE.position.y + 31.0) //29.0
 

@@ -171,7 +171,7 @@ public class AutoDECODEBlueNearOpenGate extends LinearOpMode {
                 .waitSeconds(0.2)
                 //.turnTo(Math.toRadians(-134))
                 //.lineToXSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
-                .setTangent(Math.toRadians(130))
+                .setTangent(Math.toRadians(60))
                 .lineToYSplineHeading(START_POSE.position.y+3, Math.toRadians(0))
                 .build();
 
