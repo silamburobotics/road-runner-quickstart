@@ -384,7 +384,7 @@ public class BLUE_FAR_9 extends LinearOpMode {
 
         IndexerPreviousPosition = targetPosition;
 
-            // Set indexor to run to position
+        // Set indexor to run to position
         indexor.setTargetPosition((int)targetPosition);
         indexor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         indexor.setPower(AUTO_INDEXOR_POWER);
@@ -392,9 +392,36 @@ public class BLUE_FAR_9 extends LinearOpMode {
         ElapsedTime indexorTimer = new ElapsedTime();
         indexorTimer.reset();
         
+        int startPosition = indexor.getCurrentPosition();
+        
         // Wait for indexor to reach position (optimized for speed)
         while (opModeIsActive() && indexor.isBusy() && indexorTimer.seconds() < INDEXOR_MOVE_TIMEOUT) {
             sleep(10);  // Reduced from 50ms to 10ms for faster response
+        }
+        
+        // Check if indexor is stuck (didn't move enough)
+        int endPosition = indexor.getCurrentPosition();
+        int movementDelta = Math.abs(endPosition - startPosition);
+        
+        if (movementDelta < (INDEXOR_TICKS * 0.5)) {  // If moved less than 50% of expected distance
+            telemetry.addData("⚠️ INDEXOR STUCK", "Clearing jam...");
+            telemetry.update();
+            
+            // Stop indexor
+            indexor.setPower(0);
+            indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            
+            // Run conveyor in reverse to eject jammed ball
+            conveyor.setPower(-CONVEYOR_POWER);
+            sleep(1000);  // 1 second reverse
+            
+            // Restore normal conveyor operation
+            conveyor.setPower(CONVEYOR_POWER);
+            
+            telemetry.addData("✅ JAM CLEARED", "Continuing...");
+            telemetry.update();
+            
+            return;
         }
 
         // Stop indexor - conveyor keeps running
