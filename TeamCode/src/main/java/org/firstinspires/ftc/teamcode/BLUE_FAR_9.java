@@ -37,6 +37,9 @@ public class BLUE_FAR_9 extends LinearOpMode {
     private Action trajectoryCloseOutFinal;
 
     public boolean ranTrajectory2 = false;
+    
+    // Autonomous timing control
+    private ElapsedTime autonomousTimer = new ElapsedTime();
 
     // Alliance and position configuration
     private static final String ALLIANCE = "BLUE";
@@ -170,6 +173,9 @@ public class BLUE_FAR_9 extends LinearOpMode {
     }
     
     private void executeAutonomousSequence() {
+        // Start autonomous timer
+        autonomousTimer.reset();
+        
         // Start shooter immediately - it will spin up during trajectory1 execution
         startShooterSystem();
         
@@ -209,20 +215,30 @@ public class BLUE_FAR_9 extends LinearOpMode {
         fireShot(6);
         moveIndexorToNextPosition();
 
-       Actions.runBlocking(trajectoryCloseOut);
-        ranTrajectory2 = true;
+        // Check if we have time for trajectoryCloseOut
+        if (autonomousTimer.seconds() < 26.0) {
+            Actions.runBlocking(trajectoryCloseOut);
+            ranTrajectory2 = true;
 
-        positionAfterTrajectory2 = indexor.getCurrentPosition();
+            positionAfterTrajectory2 = indexor.getCurrentPosition();
 
-        moveIndexorToNextPosition();
-        fireShot(7);
+            if (autonomousTimer.seconds() < 27.0) {
+                moveIndexorToNextPosition();
+                fireShot(7);
+            }
+            
+            if (autonomousTimer.seconds() < 28.0) {
+                moveIndexorToNextPosition();
+                fireShot(8);
+                moveIndexorToNextPosition();
+            }
+        }
+
+        // Wait until 29th second, then execute trajectoryCloseOutFinal
+        while (opModeIsActive() && autonomousTimer.seconds() < 29.0) {
+            sleep(50);
+        }
         
-        moveIndexorToNextPosition();
-
-        fireShot(8);
-
-        moveIndexorToNextPosition();
-
         Actions.runBlocking(trajectoryCloseOutFinal);
 
     }
