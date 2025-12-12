@@ -160,6 +160,11 @@ public class BLUE_NEAR_6_GATE extends LinearOpMode {
                 .strafeToLinearHeading(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y+2), Math.toRadians(-134)) //10.0
                 .setTangent(Math.toRadians(-134))
                 .lineToY(START_POSE.position.y + 31.0) //29.0
+                
+                // Gate opening sequence: move forward and back
+                .strafeTo(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0 + 4.0, START_POSE.position.y + 31.0 + 2.0)) // Move X+4", Y+2"
+                .strafeTo(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0 + 4.0, START_POSE.position.y + 31.0)) // Reverse Y-2"
+                .strafeTo(new Vector2d(START_POSE.position.x - REARWARD_DISTANCE - 4.0, START_POSE.position.y + 31.0)) // Reverse X-4"
 
                .stopAndAdd((telemetryPacket) -> {
                     // Stop indexor only - keep intake and conveyor running
@@ -246,20 +251,6 @@ public class BLUE_NEAR_6_GATE extends LinearOpMode {
         fireShot(5);
 
         moveIndexorToNextPosition();
-        
-        // Turn 90 degrees and back after shot 5
-        telemetry.addData("🔄 TURNING", "Rotating 90 degrees...");
-        telemetry.update();
-        
-        Action turnSequence = drive.actionBuilder(new Pose2d(START_POSE.position.x - REARWARD_DISTANCE, START_POSE.position.y + 3, Math.toRadians(0)))
-                .turnTo(Math.toRadians(90))
-                .turnTo(Math.toRadians(0))
-                .build();
-        
-        Actions.runBlocking(turnSequence);
-        
-        telemetry.addData("✅ Turn Complete", "Returning to shooting...");
-        telemetry.update();
 
         fireShot(6);
 
