@@ -17,7 +17,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Config
 @Autonomous(name="BLUE NEAR 6 GATE", group="Linear OpMode")
-public class BLUE_NEAR_6_GATE extends LinearOpMode {
+public class BLUE_NEAR_6_Gate extends LinearOpMode {
     
     // Declare motors
     private DcMotorEx indexor;
