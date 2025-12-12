@@ -562,12 +562,14 @@ public class RED_NEAR_9 extends LinearOpMode {
             indexor.setPower(0);
             indexor.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             
-            // Run conveyor in reverse to eject jammed ball
+            // Run conveyor and intake in reverse to eject jammed ball
             conveyor.setPower(-CONVEYOR_POWER);
-            sleep(1000);  // 1 second reverse
+            intake.setPower(-INTAKE_POWER);
+            sleep(500);  // 0.5 second reverse
             
-            // Restore normal conveyor operation
+            // Restore normal conveyor and intake operation
             conveyor.setPower(CONVEYOR_POWER);
+            intake.setPower(AUTO_INDEXOR_POWER);
             
             telemetry.addData("✅ JAM CLEARED", "Continuing...");
             telemetry.update();
